@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn==0.34.0
+python-dotenv==1.0.1
+edge-tts==7.0.0
+python-multipart==0.0.20
+pydantic==2.10.4
+setuptools>=69.0.0
+# Python 3.12: 20240930 fails to build; use 20250625+
+openai-whisper>=20250625

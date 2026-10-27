@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TargetLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum ActivityType {
+  lesson
+  chat
+  roleplay
+  voice
+  call
+  debate
+}
+
+enum ChatType {
+  free
+  grammar
+  roleplay
+}
+
+enum MessageRole {
+  user
+  assistant
+}
+
+enum SubscriptionTier {
+  free
+  premium
+}
+
+model User {
+  id                  String      @id @default(cuid())
+  email               String      @unique
+  passwordHash        String?
+  googleId            String?     @unique
+  // Legacy column from the earlier Firebase-auth setup; unused by current code,
+  // kept nullable instead of dropped to avoid a destructive migration over live data.
+  firebaseUid         String?     @unique
+  displayName         String      @default("Learner")
+  avatarUrl           String?
+  nativeLanguage      String      @default("hi")
+  targetLevel         TargetLevel @default(beginner)
+  grade               String?
+  board               String?
+  state               String?
+  learningGoal        String?
+  onboardingCompleted Boolean     @default(false)
+
+  subscriptionTier SubscriptionTier @default(free)
+  // Resets to 0 whenever aiUsageResetAt rolls past the current day (see subscription.service.ts).
+  aiMessagesToday  Int              @default(0)
+  aiUsageResetAt   DateTime         @default(now())
+
+  streak         Int      @default(0)
+  streakFreezes  Int      @default(1)
+  totalMinutes   Int      @default(0)
+  lessonsCompleted Int    @default(0)
+  xp             Int      @default(0)
+  coins          Int      @default(50)
+  level          Int      @default(1)
+  badges         String[] @default([])
+
+  // Nested settings blob (dark mode, notifications, voice prefs) — kept as JSON
+  // since it is read/written as a single object everywhere it is used.
+  settings Json @default("{\"darkMode\":false,\"notifications\":true,\"dailyGoalMinutes\":15,\"hindiLabels\":true,\"voiceSpeed\":0.9,\"accent\":\"indian\"}")
+
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  progress     Progress[]
+  chatSessions ChatSession[]
+  mistakeLogs  MistakeLog[]
+
+  @@map("users")
+}
+
+model Lesson {
+  id              String      @id @default(cuid())
+  title           String      @unique
+  description     String
+  level           TargetLevel
+  category        String
+  durationMinutes Int         @default(10)
+  vocabulary      String[]    @default([])
+  phrases         String[]    @default([])
+
+  // Array of exercise objects; heterogeneous shape per exercise type
+  // (mcq/match/word-bank carry extra fields), so JSON fits better than a fixed table.
+  exercises Json @default("[]")
+
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  tags      String[] @default([])
+  gradeBand String?
+
+  // Semantic embedding of title+description+category+vocabulary+phrases, used for
+  // RAG (grammar grounding, smart search). Plain Float[] + app-side cosine similarity —
+  // no pgvector, since this Postgres install doesn't have it and 500-ish rows needs no index.
+  embedding Float[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  progress Progress[]
+
+  @@map("lessons")
+}
+
+model MistakeLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  original  String
+  corrected String
+  topic     String?
+  embedding Float[]  @default([])
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("mistake_logs")
+}
+
+model Progress {
+  id                 String       @id @default(cuid())
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId           String?
+  lesson             Lesson?      @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  date               DateTime     @default(now())
+  minutesSpent       Int          @default(0)
+  score              Int          @default(0)
+  pronunciationScore Int?
+  activityType       ActivityType
+  metadata           Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@map("progress")
+}
+
+model ChatSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String   @default("New Conversation")
+  type       ChatType @default(free)
+  roleplayId String?
+  isActive   Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role        MessageRole
+  content     String
+  corrections String[]    @default([])
+  timestamp   DateTime    @default(now())
+
+  @@index([sessionId, timestamp])
+  @@map("chat_messages")
+}
