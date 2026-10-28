@@ -60,7 +60,7 @@ export default function LessonsScreen() {
                   {lesson.durationMinutes} min · {lesson.category}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#157a37" />
+              <Ionicons name="chevron-forward" size={20} color="#952248" />
             </TouchableOpacity>
           </Link>
         ))}

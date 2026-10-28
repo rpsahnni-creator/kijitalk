@@ -23,7 +23,7 @@ export default function CoursesScreen() {
           <TouchableOpacity className="mb-4 rounded-3xl bg-white p-5 dark:bg-slate-800">
             <View className="mb-3 flex-row items-center gap-3">
               <View className="rounded-2xl bg-brand-100 p-3 dark:bg-brand-900/30">
-                <Ionicons name="school" size={22} color="#0f5c2a" />
+                <Ionicons name="school" size={22} color="#741b38" />
               </View>
               <View>
                 <Text className="font-semibold text-slate-900 dark:text-white">{course.title}</Text>

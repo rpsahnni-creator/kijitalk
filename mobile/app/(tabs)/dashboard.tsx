@@ -113,7 +113,7 @@ export default function DashboardScreen() {
           <Link key={href} href={href as '/call'} asChild>
             <TouchableOpacity className="min-w-[30%] flex-1 items-center gap-2 rounded-2xl bg-white py-5 dark:bg-slate-800">
               <View className="rounded-2xl bg-brand-50 p-3 dark:bg-brand-900/30">
-                <Ionicons name={icon} size={24} color="#157a37" />
+                <Ionicons name={icon} size={24} color="#952248" />
               </View>
               <Text className="text-center text-sm font-medium text-slate-900 dark:text-white">{label}</Text>
               <Text className="text-center text-xs text-slate-400">{sub}</Text>

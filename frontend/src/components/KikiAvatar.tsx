@@ -24,8 +24,8 @@ export function KikiAvatar({ size = 'sm', className = '', animated = false }: Ki
           <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
             <defs>
               <linearGradient id="kikiHair" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#2fa233" />
-                <stop offset="100%" stopColor="#0f5c2a" />
+                <stop offset="0%" stopColor="#bf2c5c" />
+                <stop offset="100%" stopColor="#741b38" />
               </linearGradient>
               <linearGradient id="kikiSkin" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#fde68a" />
@@ -41,11 +41,11 @@ export function KikiAvatar({ size = 'sm', className = '', animated = false }: Ki
             <circle cx="62" cy="54" r="4" fill="#1e293b" />
             <circle cx="39" cy="53" r="1.5" fill="white" />
             <circle cx="63" cy="53" r="1.5" fill="white" />
-            <path d="M42 66 Q50 74 58 66" stroke="#0f5c2a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            <path d="M42 66 Q50 74 58 66" stroke="#741b38" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             <ellipse cx="32" cy="62" rx="5" ry="3" fill="#ffe58a" opacity="0.7" />
             <ellipse cx="68" cy="62" rx="5" ry="3" fill="#ffe58a" opacity="0.7" />
             <circle cx="78" cy="22" r="3" fill="#fdc403" opacity="0.9" />
-            <circle cx="22" cy="28" r="2" fill="#7adf9c" opacity="0.8" />
+            <circle cx="22" cy="28" r="2" fill="#e283a2" opacity="0.8" />
           </svg>
         </div>
       </div>

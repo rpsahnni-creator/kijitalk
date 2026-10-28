@@ -70,7 +70,7 @@ export default function DashboardPage() {
             <div className="h-full rounded-full gradient-hero transition-all" style={{ width: `${goalPercent}%` }} />
           </div>
           {goalPercent >= 100 && (
-            <p className="mt-2 text-sm text-brand-600">Shabash! Aaj ka goal complete! 🎉</p>
+            <p className="mt-2 text-sm text-success-600">Shabash! Aaj ka goal complete! 🎉</p>
           )}
         </div>
 

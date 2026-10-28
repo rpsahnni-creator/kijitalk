@@ -69,7 +69,7 @@ export default function PricingPage() {
         description: order.description,
         order_id: order.orderId,
         prefill: { name: profile?.displayName, email: profile?.email },
-        theme: { color: '#157a37' },
+        theme: { color: '#952248' },
         handler: async (response: RazorpaySuccessResponse) => {
           try {
             await api.post('/api/subscription/verify', response, token);

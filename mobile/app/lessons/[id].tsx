@@ -201,7 +201,7 @@ export default function LessonDetailScreen() {
           {lesson.vocabulary.map((w) => (
             <TouchableOpacity key={w} onPress={() => speechService.speak(w)} className="flex-row items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5 dark:bg-brand-900/30">
               <Text className="text-sm text-brand-700 dark:text-brand-300">{w}</Text>
-              <Ionicons name="volume-medium" size={12} color="#0f5c2a" />
+              <Ionicons name="volume-medium" size={12} color="#741b38" />
             </TouchableOpacity>
           ))}
         </View>
@@ -210,7 +210,7 @@ export default function LessonDetailScreen() {
         {lesson.phrases.map((p) => (
           <TouchableOpacity key={p} onPress={() => speechService.speak(p)} className="mb-2 flex-row items-center justify-between rounded-xl bg-white p-4 dark:bg-slate-800">
             <Text className="flex-1 text-slate-900 dark:text-white">{p}</Text>
-            <Ionicons name="volume-medium" size={16} color="#157a37" />
+            <Ionicons name="volume-medium" size={16} color="#952248" />
           </TouchableOpacity>
         ))}
 
@@ -260,7 +260,7 @@ export default function LessonDetailScreen() {
         {exercise.type === 'repeat' && (
           <>
             <TouchableOpacity onPress={() => speechService.speak(exercise.answer)} className="flex-row items-center justify-center gap-2 rounded-2xl border border-slate-200 py-3 dark:border-slate-600">
-              <Ionicons name="volume-medium" size={18} color="#157a37" />
+              <Ionicons name="volume-medium" size={18} color="#952248" />
               <Text className="font-medium text-slate-700 dark:text-slate-200">Suno aur repeat karo</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => advance(true)} className="mt-4 rounded-2xl bg-brand-600 py-4">
@@ -272,7 +272,7 @@ export default function LessonDetailScreen() {
         {exercise.type === 'listen-type' && (
           <>
             <TouchableOpacity onPress={() => speechService.speak(exercise.answer)} className="mb-3 flex-row items-center justify-center gap-2 rounded-2xl border border-slate-200 py-3 dark:border-slate-600">
-              <Ionicons name="volume-medium" size={18} color="#157a37" />
+              <Ionicons name="volume-medium" size={18} color="#952248" />
               <Text className="font-medium text-slate-700 dark:text-slate-200">Play Audio</Text>
             </TouchableOpacity>
             <TextInput
@@ -294,11 +294,11 @@ export default function LessonDetailScreen() {
               const isAnswer = normalizeEq(option, exercise.answer);
               const showState = selectedOption !== null;
               const borderColor = showState && isSelected && isAnswer
-                ? 'border-brand-500 bg-brand-50'
+                ? 'border-success-500 bg-success-50'
                 : showState && isSelected && !isAnswer
                 ? 'border-red-500 bg-red-50'
                 : showState && isAnswer
-                ? 'border-brand-500'
+                ? 'border-success-500'
                 : 'border-slate-200 dark:border-slate-600';
               return (
                 <TouchableOpacity
@@ -352,7 +352,7 @@ export default function LessonDetailScreen() {
                     key={pair.left}
                     disabled={matched}
                     onPress={() => setMatchLeft(pair.left)}
-                    className={`rounded-lg border-2 px-3 py-2 ${matched ? 'border-brand-500 bg-brand-50 opacity-60' : active ? 'border-brand-500 bg-brand-50' : 'border-slate-200 dark:border-slate-600'}`}
+                    className={`rounded-lg border-2 px-3 py-2 ${matched ? 'border-success-500 bg-success-50 opacity-60' : active ? 'border-brand-500 bg-brand-50' : 'border-slate-200 dark:border-slate-600'}`}
                   >
                     <Text className="text-sm text-slate-900 dark:text-white">{pair.left}</Text>
                   </TouchableOpacity>
@@ -367,7 +367,7 @@ export default function LessonDetailScreen() {
                     key={right}
                     disabled={isMatched}
                     onPress={() => pickMatchRight(right)}
-                    className={`rounded-lg border-2 px-3 py-2 ${isMatched ? 'border-brand-500 bg-brand-50 opacity-60' : 'border-slate-200 dark:border-slate-600'}`}
+                    className={`rounded-lg border-2 px-3 py-2 ${isMatched ? 'border-success-500 bg-success-50 opacity-60' : 'border-slate-200 dark:border-slate-600'}`}
                   >
                     <Text className="text-sm text-slate-900 dark:text-white">{right}</Text>
                   </TouchableOpacity>
@@ -377,7 +377,7 @@ export default function LessonDetailScreen() {
           </View>
         )}
 
-        {feedback === 'correct' && <Text className="mt-3 text-sm text-brand-600">✓ Sahi jawab!</Text>}
+        {feedback === 'correct' && <Text className="mt-3 text-sm text-success-600">✓ Sahi jawab!</Text>}
         {feedback === 'wrong' && <Text className="mt-3 text-sm text-red-500">✗ Try again! Hint: {exercise.answer}</Text>}
       </View>
     </ScrollView>

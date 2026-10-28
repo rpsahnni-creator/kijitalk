@@ -22,7 +22,7 @@ import { api, DashboardData } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { BADGES } from '@/lib/badges';
 
-const PIE_COLORS = ['#157a37', '#fdc403', '#46c727', '#b88e00', '#0b4620', '#ffe58a'];
+const PIE_COLORS = ['#952248', '#fdc403', '#d7517d', '#b88e00', '#57142a', '#ffe58a'];
 const ACTIVITY_LABELS: Record<string, string> = {
   chat: 'Kiki Chat',
   lesson: 'Lessons',
@@ -127,7 +127,7 @@ export default function ProgressPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(d) => d.slice(5)} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="minutes" fill="#157a37" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="minutes" fill="#952248" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -178,7 +178,7 @@ export default function ProgressPage() {
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
                       item.score >= 80
-                        ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                        ? 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300'
                         : item.score >= 50
                         ? 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300'
                         : 'bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300'
