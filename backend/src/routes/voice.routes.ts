@@ -7,6 +7,7 @@ import { logger } from '../utils/logger';
 import { findUserByAuth } from '../utils/findUser';
 import { recordUserActivity } from '../utils/streak';
 import { saveUser } from '../utils/persistUser';
+import { checkAiUsage, recordAiUsage } from '../services/subscription.service';
 
 const router = Router();
 
@@ -58,9 +59,21 @@ router.post('/pronunciation', authMiddleware, async (req: AuthRequest, res: Resp
       return;
     }
 
+    const user = await findUserByAuth(req);
+    if (user) {
+      const usage = checkAiUsage(user);
+      if (!usage.allowed) {
+        res.status(429).json({
+          error: 'Aaj ka free limit khatam ho gaya — kal phir try karo, ya Premium lo unlimited practice ke liye.',
+          limitReached: true,
+          usage,
+        });
+        return;
+      }
+    }
+
     const result = await analyzePronunciation(expected, transcribed);
 
-    const user = await findUserByAuth(req);
     if (user) {
       await prisma.progress.create({
         data: {
@@ -73,6 +86,7 @@ router.post('/pronunciation', authMiddleware, async (req: AuthRequest, res: Resp
         },
       });
       recordUserActivity(user, 2);
+      recordAiUsage(user);
       await saveUser(user);
     }
 

@@ -6,6 +6,7 @@ import { generateTutorReply, TutorEngine } from '../services/tutor.service';
 import { findUserByAuth } from '../utils/findUser';
 import { recordUserActivity } from '../utils/streak';
 import { saveUser } from '../utils/persistUser';
+import { canUseClaudeEngine, checkAiUsage, recordAiUsage } from '../services/subscription.service';
 
 const router = Router();
 
@@ -70,6 +71,17 @@ router.post('/:id/message', authMiddleware, async (req: AuthRequest, res: Respon
       return;
     }
 
+    const usage = checkAiUsage(user);
+    if (!usage.allowed) {
+      res.status(429).json({
+        error: 'Aaj ka free limit khatam ho gaya — kal phir try karo, ya Premium lo unlimited practice ke liye.',
+        limitReached: true,
+        usage,
+      });
+      return;
+    }
+    const requestedEngine = engine === 'claude' && !canUseClaudeEngine(user) ? 'gemini' : engine;
+
     const session = await prisma.chatSession.findFirst({
       where: { id: sessionId, userId: user.id },
       include: { messages: { orderBy: { timestamp: 'asc' } } },
@@ -81,7 +93,7 @@ router.post('/:id/message', authMiddleware, async (req: AuthRequest, res: Respon
 
     const history = session.messages.map((m) => ({ role: m.role, content: m.content }));
 
-    const aiResponse = await generateTutorReply(engine, message, history, scenario.systemPrompt, user.id);
+    const aiResponse = await generateTutorReply(requestedEngine, message, history, scenario.systemPrompt, user.id);
 
     await prisma.chatMessage.createMany({
       data: [
@@ -111,6 +123,7 @@ router.post('/:id/message', authMiddleware, async (req: AuthRequest, res: Respon
     });
 
     recordUserActivity(user, 2);
+    recordAiUsage(user);
     await saveUser(user);
 
     res.json({

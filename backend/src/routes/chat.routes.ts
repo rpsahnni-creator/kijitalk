@@ -7,6 +7,7 @@ import { findUserByAuth } from '../utils/findUser';
 import { recordUserActivity } from '../utils/streak';
 import { saveUser } from '../utils/persistUser';
 import { awardActivity } from '../services/gamification.service';
+import { canUseClaudeEngine, checkAiUsage, recordAiUsage } from '../services/subscription.service';
 
 const router = Router();
 
@@ -75,6 +76,19 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
       return;
     }
 
+    const usage = checkAiUsage(user);
+    if (!usage.allowed) {
+      res.status(429).json({
+        error: 'Aaj ka free limit khatam ho gaya — kal phir try karo, ya Premium lo unlimited practice ke liye.',
+        limitReached: true,
+        usage,
+      });
+      return;
+    }
+
+    const requestedEngine = engine === 'claude' && !canUseClaudeEngine(user) ? 'gemini' : engine;
+    const claudeDowngraded = engine === 'claude' && requestedEngine === 'gemini';
+
     let session = sessionId
       ? await prisma.chatSession.findFirst({
           where: { id: sessionId, userId: user.id },
@@ -91,7 +105,7 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
 
     const history = session.messages.map((m) => ({ role: m.role, content: m.content }));
 
-    const aiResponse = await generateTutorReply(engine, message, history, systemPrompt, user.id);
+    const aiResponse = await generateTutorReply(requestedEngine, message, history, systemPrompt, user.id);
 
     await prisma.chatMessage.createMany({
       data: [
@@ -120,6 +134,7 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
     });
 
     recordUserActivity(user, 1);
+    recordAiUsage(user);
     const rewards = awardActivity(user, 'chat', aiResponse.corrections.length === 0 ? 100 : 70);
     await saveUser(user);
 
@@ -131,6 +146,7 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
       wasHindi: aiResponse.wasHindi,
       teachingTip: aiResponse.teachingTip,
       engineUsed: aiResponse.engineUsed,
+      claudeDowngraded,
       rewards,
     });
   } catch (error) {

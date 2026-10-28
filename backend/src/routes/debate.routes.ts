@@ -5,6 +5,7 @@ import { findUserByAuth } from '../utils/findUser';
 import { saveUser } from '../utils/persistUser';
 import { awardActivity } from '../services/gamification.service';
 import { recordUserActivity } from '../utils/streak';
+import { canUseClaudeEngine, checkAiUsage, recordAiUsage } from '../services/subscription.service';
 
 const DEBATE_TOPICS = [
   { id: 'phones-school', topic: 'Should mobile phones be allowed in schools?', level: 'intermediate' },
@@ -41,13 +42,26 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
     }
 
     const user = await findUserByAuth(req);
+    if (user) {
+      const usage = checkAiUsage(user);
+      if (!usage.allowed) {
+        res.status(429).json({
+          error: 'Aaj ka free limit khatam ho gaya — kal phir try karo, ya Premium lo unlimited practice ke liye.',
+          limitReached: true,
+          usage,
+        });
+        return;
+      }
+    }
+    const requestedEngine = engine === 'claude' && !(user && canUseClaudeEngine(user)) ? 'gemini' : engine;
     const prompt = `[Debate topic: ${topic.topic}] Student says: ${message}`;
 
-    const aiResponse = await generateTutorReply(engine, prompt, history, DEBATE_SYSTEM, user?.id);
+    const aiResponse = await generateTutorReply(requestedEngine, prompt, history, DEBATE_SYSTEM, user?.id);
 
     if (user) {
       awardActivity(user, 'debate', 85);
       recordUserActivity(user, 2);
+      recordAiUsage(user);
       await saveUser(user);
     }
 

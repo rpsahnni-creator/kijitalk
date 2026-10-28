@@ -15,6 +15,7 @@ import settingsRoutes from './routes/settings.routes';
 import gamificationRoutes from './routes/gamification.routes';
 import debateRoutes from './routes/debate.routes';
 import coursesRoutes from './routes/courses.routes';
+import subscriptionRoutes from './routes/subscription.routes';
 
 export function createApp() {
   const app = express();
@@ -52,6 +53,7 @@ export function createApp() {
         gamification: '/api/gamification',
         debate: '/api/debate',
         courses: '/api/courses',
+        subscription: '/api/subscription',
       },
     });
   });
@@ -70,6 +72,7 @@ export function createApp() {
   app.use('/api/gamification', gamificationRoutes);
   app.use('/api/debate', debateRoutes);
   app.use('/api/courses', coursesRoutes);
+  app.use('/api/subscription', subscriptionRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
