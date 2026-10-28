@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/useStore';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
@@ -45,8 +46,8 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 dark:bg-slate-900">
       <div className="card w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero text-2xl font-bold text-white">
-            K
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero p-2">
+            <Image src="/logo.png" alt="KijiTalk" width={56} height={56} className="h-full w-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold">Create your account</h1>
           <p className="text-slate-500">Start speaking English today — it&apos;s free</p>

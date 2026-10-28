@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: 'KijiTalk — Learn English by Speaking',
   description: 'AI-powered English speaking practice app. Chat, roleplay, and improve your pronunciation.',
   keywords: ['english', 'speaking', 'AI', 'language learning', 'kijitalk'],
+};
+
+export const viewport: Viewport = {
+  themeColor: '#157a37',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

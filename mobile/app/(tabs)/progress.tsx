@@ -77,7 +77,7 @@ export default function ProgressScreen() {
           {BADGES.map((badge) => {
             const earned = (data?.stats.badges ?? []).includes(badge.id);
             return (
-              <View key={badge.id} className={`flex-row items-center gap-1.5 rounded-2xl border px-3 py-2 ${earned ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-slate-50 opacity-50 dark:border-slate-700 dark:bg-slate-900'}`}>
+              <View key={badge.id} className={`flex-row items-center gap-1.5 rounded-2xl border px-3 py-2 ${earned ? 'border-accent-200 bg-accent-50' : 'border-slate-200 bg-slate-50 opacity-50 dark:border-slate-700 dark:bg-slate-900'}`}>
                 <Text>{badge.emoji}</Text>
                 <Text className="text-sm font-medium text-slate-900 dark:text-white">{badge.label}</Text>
               </View>
@@ -122,14 +122,14 @@ export default function ProgressScreen() {
         {(data?.recentActivity ?? []).map((item) => (
           <View key={item.id} className="mb-2 flex-row items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5 dark:bg-slate-700">
             <View className="h-9 w-9 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30">
-              <Ionicons name={ACTIVITY_ICONS[item.activityType] ?? 'chatbubbles'} size={16} color="#4338ca" />
+              <Ionicons name={ACTIVITY_ICONS[item.activityType] ?? 'chatbubbles'} size={16} color="#0f5c2a" />
             </View>
             <View className="flex-1">
               <Text className="font-medium text-slate-900 dark:text-white">{ACTIVITY_LABELS[item.activityType] ?? item.activityType}</Text>
               <Text className="text-xs text-slate-500">{formatRelativeDate(item.date)} · {item.minutesSpent} min</Text>
             </View>
-            <View className={`rounded-full px-2.5 py-1 ${item.score >= 80 ? 'bg-emerald-100' : item.score >= 50 ? 'bg-amber-100' : 'bg-slate-200'}`}>
-              <Text className={`text-xs font-semibold ${item.score >= 80 ? 'text-emerald-700' : item.score >= 50 ? 'text-amber-700' : 'text-slate-600'}`}>{item.score}%</Text>
+            <View className={`rounded-full px-2.5 py-1 ${item.score >= 80 ? 'bg-brand-100' : item.score >= 50 ? 'bg-accent-100' : 'bg-slate-200'}`}>
+              <Text className={`text-xs font-semibold ${item.score >= 80 ? 'text-brand-700' : item.score >= 50 ? 'text-accent-700' : 'text-slate-600'}`}>{item.score}%</Text>
             </View>
           </View>
         ))}

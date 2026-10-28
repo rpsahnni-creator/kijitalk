@@ -88,12 +88,12 @@ export default function ChatScreen() {
               )}
             </View>
             {m.corrections && m.corrections.length > 0 && (
-              <Text className="mt-1 text-xs text-amber-600">{m.corrections.join(', ')}</Text>
+              <Text className="mt-1 text-xs text-accent-600">{m.corrections.join(', ')}</Text>
             )}
             {m.teachingTip && (
-              <View className="mt-2 flex-row items-start gap-1.5 rounded-xl bg-amber-50 px-3 py-2">
-                <Ionicons name="bulb" size={14} color="#92400e" />
-                <Text className="flex-1 text-xs text-amber-800">{m.teachingTip}</Text>
+              <View className="mt-2 flex-row items-start gap-1.5 rounded-xl bg-accent-50 px-3 py-2">
+                <Ionicons name="bulb" size={14} color="#8f6e00" />
+                <Text className="flex-1 text-xs text-accent-800">{m.teachingTip}</Text>
               </View>
             )}
           </View>

@@ -194,7 +194,7 @@ export default function ChatPage() {
                 )}
                 {msg.corrections && msg.corrections.length > 0 && (
                   <div className="mt-2 border-t border-slate-200 pt-2 dark:border-slate-600">
-                    <p className="text-xs font-semibold text-amber-600">Corrections:</p>
+                    <p className="text-xs font-semibold text-accent-600">Corrections:</p>
                     {msg.corrections.map((c, j) => (
                       <p key={j} className="text-xs text-slate-500">
                         {c}
@@ -203,7 +203,7 @@ export default function ChatPage() {
                   </div>
                 )}
                 {msg.teachingTip && (
-                  <div className="mt-2 flex items-start gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                  <div className="mt-2 flex items-start gap-1.5 rounded-xl bg-accent-50 px-3 py-2 text-xs text-accent-800 dark:bg-accent-900/30 dark:text-accent-200">
                     <Lightbulb size={14} className="mt-0.5 shrink-0" />
                     <p>{msg.teachingTip}</p>
                   </div>
@@ -216,9 +216,9 @@ export default function ChatPage() {
               <KikiAvatar size="sm" animated />
               <div className="rounded-2xl bg-slate-100 px-4 py-3 dark:bg-slate-700">
                 <div className="flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400 [animation-delay:0.1s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400 [animation-delay:0.2s]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-accent-400" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-accent-400 [animation-delay:0.1s]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-accent-400 [animation-delay:0.2s]" />
                 </div>
               </div>
             </div>

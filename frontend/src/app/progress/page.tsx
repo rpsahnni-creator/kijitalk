@@ -22,7 +22,7 @@ import { api, DashboardData } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { BADGES } from '@/lib/badges';
 
-const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const PIE_COLORS = ['#157a37', '#fdc403', '#46c727', '#b88e00', '#0b4620', '#ffe58a'];
 const ACTIVITY_LABELS: Record<string, string> = {
   chat: 'Kiki Chat',
   lesson: 'Lessons',
@@ -106,7 +106,7 @@ export default function ProgressPage() {
                   title={badge.description}
                   className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition ${
                     earned
-                      ? 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20'
+                      ? 'border-accent-200 bg-accent-50 dark:border-accent-800 dark:bg-accent-900/20'
                       : 'border-slate-200 bg-slate-50 opacity-50 grayscale dark:border-slate-700 dark:bg-slate-800'
                   }`}
                 >
@@ -127,7 +127,7 @@ export default function ProgressPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(d) => d.slice(5)} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="minutes" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="minutes" fill="#157a37" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -178,9 +178,9 @@ export default function ProgressPage() {
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
                       item.score >= 80
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                        ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
                         : item.score >= 50
-                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                        ? 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300'
                         : 'bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300'
                     }`}
                   >

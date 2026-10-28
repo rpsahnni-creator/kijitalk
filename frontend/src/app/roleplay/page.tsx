@@ -10,9 +10,9 @@ import { useAuthStore } from '@/stores/useStore';
 import { api, RoleplayScenario } from '@/lib/api';
 
 const LEVEL_COLORS: Record<string, string> = {
-  beginner: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  intermediate: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  advanced: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+  beginner: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300',
+  intermediate: 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300',
+  advanced: 'bg-brand-700 text-white dark:bg-brand-800 dark:text-accent-100',
 };
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -74,7 +74,7 @@ export default function RoleplayPage() {
               href={`/roleplay/${scenario.id}`}
               className="card group transition hover:scale-[1.01] hover:shadow-lg"
             >
-              <div className="mb-4 flex h-32 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 to-indigo-100 text-5xl dark:from-brand-900/30 dark:to-indigo-900/30">
+              <div className="mb-4 flex h-32 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-5xl dark:from-brand-900/30 dark:to-accent-900/30">
                 {CATEGORY_EMOJI[scenario.category] ?? '🎭'}
               </div>
               <div className="mb-2 flex items-center gap-2">

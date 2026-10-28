@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/stores/useStore';
 import { api } from '@/lib/api';
@@ -44,8 +45,8 @@ export default function ProfileOnboardingPage() {
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
       <div className="mx-auto w-full max-w-lg flex-1 p-6">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero text-2xl font-bold text-white">
-            K
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero p-2">
+            <Image src="/logo.png" alt="KijiTalk" width={56} height={56} className="h-full w-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold">Apna profile set karo</h1>
           <p className="text-slate-500">Bharat ke har student ke liye — bilkul free</p>

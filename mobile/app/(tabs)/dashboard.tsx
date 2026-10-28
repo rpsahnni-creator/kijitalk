@@ -65,17 +65,17 @@ export default function DashboardScreen() {
       </View>
 
       <View className="mb-6 flex-row flex-wrap gap-2">
-        <View className="rounded-full bg-violet-100 px-4 py-2">
-          <Text className="text-sm font-semibold text-violet-700">⭐ {dashboard?.stats.xp ?? 0} XP</Text>
+        <View className="rounded-full bg-brand-100 px-4 py-2">
+          <Text className="text-sm font-semibold text-brand-700">⭐ {dashboard?.stats.xp ?? 0} XP</Text>
         </View>
-        <View className="rounded-full bg-amber-100 px-4 py-2">
-          <Text className="text-sm font-semibold text-amber-700">🪙 {dashboard?.stats.coins ?? 0} Coins</Text>
+        <View className="rounded-full bg-accent-100 px-4 py-2">
+          <Text className="text-sm font-semibold text-accent-700">🪙 {dashboard?.stats.coins ?? 0} Coins</Text>
         </View>
       </View>
 
       {dashboard?.dailyPhrase && (
-        <View className="mb-6 rounded-3xl bg-violet-50 p-5 dark:bg-violet-950/30">
-          <Text className="mb-1 text-xs font-semibold text-violet-600">Today&apos;s Phrase · {dashboard.dailyPhrase.category}</Text>
+        <View className="mb-6 rounded-3xl bg-accent-50 p-5 dark:bg-accent-900/20">
+          <Text className="mb-1 text-xs font-semibold text-accent-800 dark:text-accent-300">Today&apos;s Phrase · {dashboard.dailyPhrase.category}</Text>
           <Text className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">{dashboard.dailyPhrase.english}</Text>
           <Text className="text-sm text-slate-500">{dashboard.dailyPhrase.hindi}</Text>
         </View>
@@ -83,11 +83,11 @@ export default function DashboardScreen() {
 
       <Link href="/(tabs)/chat" asChild>
         <TouchableOpacity className="mb-6 flex-row items-center gap-4 rounded-3xl bg-white p-5 dark:bg-slate-800">
-          <View className="h-12 w-12 items-center justify-center rounded-full bg-violet-100">
-            <Ionicons name="sparkles" size={22} color="#7c3aed" />
+          <View className="h-12 w-12 items-center justify-center rounded-full bg-accent-100">
+            <Ionicons name="sparkles" size={22} color="#b88e00" />
           </View>
           <View className="flex-1">
-            <Text className="text-xs font-medium text-violet-600">AI Tutor · Free</Text>
+            <Text className="text-xs font-medium text-accent-800">AI Tutor · Free</Text>
             <Text className="text-lg font-bold text-slate-900 dark:text-white">Kiki se baat karo</Text>
             <Text className="text-sm text-slate-500">Hindi mein likho ya bolo — English seekho!</Text>
           </View>
@@ -97,9 +97,9 @@ export default function DashboardScreen() {
       {dailyLesson && (
         <Link href={`/lessons/${dailyLesson.id}`} asChild>
           <TouchableOpacity className="mb-6 rounded-3xl bg-brand-600 p-6">
-            <Text className="text-sm text-indigo-200">Aaj ka Lesson</Text>
+            <Text className="text-sm text-accent-200">Aaj ka Lesson</Text>
             <Text className="mb-1 text-xl font-bold text-white">{dailyLesson.title}</Text>
-            <Text className="mb-4 text-indigo-100">{dailyLesson.description}</Text>
+            <Text className="mb-4 text-brand-50">{dailyLesson.description}</Text>
             <View className="self-start rounded-2xl bg-white px-5 py-2.5">
               <Text className="font-semibold text-brand-700">Start · {dailyLesson.durationMinutes} min</Text>
             </View>
@@ -113,7 +113,7 @@ export default function DashboardScreen() {
           <Link key={href} href={href as '/call'} asChild>
             <TouchableOpacity className="min-w-[30%] flex-1 items-center gap-2 rounded-2xl bg-white py-5 dark:bg-slate-800">
               <View className="rounded-2xl bg-brand-50 p-3 dark:bg-brand-900/30">
-                <Ionicons name={icon} size={24} color="#4f46e5" />
+                <Ionicons name={icon} size={24} color="#157a37" />
               </View>
               <Text className="text-center text-sm font-medium text-slate-900 dark:text-white">{label}</Text>
               <Text className="text-center text-xs text-slate-400">{sub}</Text>

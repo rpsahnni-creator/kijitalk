@@ -50,8 +50,8 @@ export default function LessonsScreen() {
                 <View className="mb-1 flex-row flex-wrap items-center gap-2">
                   <Text className="font-semibold text-slate-900 dark:text-white">{lesson.title}</Text>
                   {lesson.recommended && (
-                    <View className="rounded-full bg-amber-100 px-2 py-0.5">
-                      <Text className="text-xs text-amber-700">★ Recommended</Text>
+                    <View className="rounded-full bg-accent-100 px-2 py-0.5">
+                      <Text className="text-xs text-accent-700">★ Recommended</Text>
                     </View>
                   )}
                 </View>
@@ -60,7 +60,7 @@ export default function LessonsScreen() {
                   {lesson.durationMinutes} min · {lesson.category}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#4f46e5" />
+              <Ionicons name="chevron-forward" size={20} color="#157a37" />
             </TouchableOpacity>
           </Link>
         ))}

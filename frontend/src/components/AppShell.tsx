@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -39,8 +40,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 lg:flex">
         <Link href="/dashboard" className="mb-8 flex items-center gap-2 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl gradient-hero text-lg font-bold text-white">
-            K
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl gradient-hero p-1.5">
+            <Image src="/logo.png" alt="KijiTalk" width={40} height={40} className="h-full w-full object-contain" priority />
           </div>
           <div>
             <span className="text-xl font-bold text-slate-900 dark:text-white">KijiTalk</span>

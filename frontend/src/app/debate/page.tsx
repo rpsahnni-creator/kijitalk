@@ -90,7 +90,7 @@ export default function DebatePage() {
         </select>
 
         {topic && (
-          <p className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+          <p className="mb-4 rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-800 dark:bg-accent-900/20 dark:text-accent-200">
             Topic: {topic.topic} · Level: {topic.level}
           </p>
         )}

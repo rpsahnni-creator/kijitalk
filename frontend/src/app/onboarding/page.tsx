@@ -10,19 +10,19 @@ const slides = [
     title: 'Kiki se English Seekho',
     description: 'Hindi mein bolo ya likho — Kiki turant English mein translate karke sikhayegi. Poore Bharat ke students ke liye free!',
     emoji: '💬',
-    gradient: 'from-brand-500 to-indigo-500',
+    gradient: 'from-brand-500 to-accent-500',
   },
   {
     title: 'School & Daily Life Practice',
     description: 'Class introduction, teacher se baat, railway station, bazaar — real Indian situations mein practice karo.',
     emoji: '🏫',
-    gradient: 'from-violet-500 to-purple-600',
+    gradient: 'from-accent-500 to-accent-600',
   },
   {
     title: 'Bol kar Seekho · Track karo',
     description: 'Mic se bolo, pronunciation score pao, daily streak banao — roz thoda practice, bahut aage badho!',
     emoji: '🎤',
-    gradient: 'from-emerald-500 to-teal-600',
+    gradient: 'from-brand-500 to-brand-600',
   },
 ];
 

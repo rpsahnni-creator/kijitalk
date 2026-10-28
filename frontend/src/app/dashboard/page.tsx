@@ -42,9 +42,9 @@ export default function DashboardPage() {
 
   const quickActions = [
     { href: '/chat', icon: MessageCircle, label: 'Kiki se baat', sub: 'Hindi → English', color: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' },
-    { href: '/voice', icon: Mic, label: 'Bol kar seekho', sub: 'Pronunciation', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
-    { href: '/roleplay', icon: Users, label: 'Roleplay', sub: 'Real situations', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' },
-    { href: '/lessons', icon: BookOpen, label: 'Lessons', sub: 'School & daily life', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+    { href: '/voice', icon: Mic, label: 'Bol kar seekho', sub: 'Pronunciation', color: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' },
+    { href: '/roleplay', icon: Users, label: 'Roleplay', sub: 'Real situations', color: 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300' },
+    { href: '/lessons', icon: BookOpen, label: 'Lessons', sub: 'School & daily life', color: 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300' },
   ];
 
   return (
@@ -70,16 +70,16 @@ export default function DashboardPage() {
             <div className="h-full rounded-full gradient-hero transition-all" style={{ width: `${goalPercent}%` }} />
           </div>
           {goalPercent >= 100 && (
-            <p className="mt-2 text-sm text-emerald-600">Shabash! Aaj ka goal complete! 🎉</p>
+            <p className="mt-2 text-sm text-brand-600">Shabash! Aaj ka goal complete! 🎉</p>
           )}
         </div>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Flame, label: 'Streak', value: `${dashboard?.stats.streak ?? profile?.streak ?? 0} din`, color: 'text-orange-500' },
-            { icon: Clock, label: 'Aaj', value: `${todayMinutes} min`, color: 'text-blue-500' },
-            { icon: BookOpen, label: 'Lessons', value: dashboard?.stats.lessonsCompleted ?? profile?.lessonsCompleted ?? 0, color: 'text-emerald-500' },
-            { icon: Target, label: 'Level', value: `Lv.${dashboard?.stats.level ?? 1}`, color: 'text-violet-500' },
+            { icon: Flame, label: 'Streak', value: `${dashboard?.stats.streak ?? profile?.streak ?? 0} din`, color: 'text-accent-500' },
+            { icon: Clock, label: 'Aaj', value: `${todayMinutes} min`, color: 'text-brand-500' },
+            { icon: BookOpen, label: 'Lessons', value: dashboard?.stats.lessonsCompleted ?? profile?.lessonsCompleted ?? 0, color: 'text-brand-500' },
+            { icon: Target, label: 'Level', value: `Lv.${dashboard?.stats.level ?? 1}`, color: 'text-accent-500' },
           ].map(({ icon: Icon, label, value, color }) => (
             <div key={label} className="card flex items-center gap-4">
               <div className={`rounded-2xl bg-slate-100 p-3 dark:bg-slate-700 ${color}`}>
@@ -95,10 +95,10 @@ export default function DashboardPage() {
 
         {(dashboard?.stats.xp !== undefined || dashboard?.stats.coins !== undefined) && (
           <div className="mb-6 flex flex-wrap gap-3">
-            <span className="rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-700 dark:bg-violet-900/30">
+            <span className="rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700 dark:bg-brand-900/30">
               ⭐ {dashboard?.stats.xp ?? 0} XP
             </span>
-            <span className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30">
+            <span className="rounded-full bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700 dark:bg-accent-900/30">
               🪙 {dashboard?.stats.coins ?? 0} Coins
             </span>
             <Link href="/progress" className="rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700">
@@ -108,17 +108,17 @@ export default function DashboardPage() {
         )}
 
         {dashboard?.dailyPhrase && (
-          <div className="card mb-6 border-violet-100 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30">
-            <div className="mb-2 flex items-center gap-2 text-violet-600">
+          <div className="card mb-6 border-accent-100 bg-gradient-to-r from-accent-50 to-brand-50 dark:from-accent-950/30 dark:to-brand-950/30">
+            <div className="mb-2 flex items-center gap-2 text-accent-600">
               <Sparkles size={16} />
               <span className="text-sm font-semibold">{t('dailyPhrase')}</span>
-              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs dark:bg-violet-900/40">
+              <span className="rounded-full bg-accent-100 px-2 py-0.5 text-xs dark:bg-accent-900/40">
                 {dashboard.dailyPhrase.category}
               </span>
             </div>
             <p className="text-lg font-semibold">{dashboard.dailyPhrase.english}</p>
             <p className="text-sm text-slate-500">{dashboard.dailyPhrase.hindi}</p>
-            <p className="mt-2 text-xs text-violet-600">{dashboard.dailyPhrase.tip}</p>
+            <p className="mt-2 text-xs text-accent-600">{dashboard.dailyPhrase.tip}</p>
             <button
               onClick={() => speechService.speak(dashboard.dailyPhrase!.english)}
               className="mt-3 inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"
@@ -134,20 +134,20 @@ export default function DashboardPage() {
         >
           <KikiAvatar size="lg" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-violet-600 dark:text-violet-300">AI Tutor · Free</p>
+            <p className="text-sm font-medium text-accent-600 dark:text-accent-300">AI Tutor · Free</p>
             <h2 className="text-lg font-bold">Kiki se baat karo</h2>
             <p className="text-sm text-slate-500">Hindi mein likho ya bolo — English seekho!</p>
           </div>
-          <span className="rounded-2xl bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+          <span className="rounded-2xl bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">
             Chat →
           </span>
         </Link>
 
         {dailyLesson && (
           <div className="card mb-8 gradient-hero text-white">
-            <p className="mb-1 text-sm text-indigo-200">Aaj ka Lesson</p>
+            <p className="mb-1 text-sm text-accent-200">Aaj ka Lesson</p>
             <h2 className="mb-2 text-xl font-bold">{dailyLesson.title}</h2>
-            <p className="mb-4 text-indigo-100">{dailyLesson.description}</p>
+            <p className="mb-4 text-accent-100">{dailyLesson.description}</p>
             <Link href={`/lessons/${dailyLesson.id}`} className="inline-flex rounded-2xl bg-white px-5 py-2.5 text-sm font-semibold text-brand-700">
               {t('startLesson')} · {dailyLesson.durationMinutes} min
             </Link>

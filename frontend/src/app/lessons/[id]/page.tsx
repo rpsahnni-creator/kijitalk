@@ -184,7 +184,7 @@ export default function LessonDetailPage() {
     return (
       <AppShell>
         <div className="mx-auto max-w-lg p-6 text-center">
-          <CheckCircle className="mx-auto mb-4 text-emerald-500" size={64} />
+          <CheckCircle className="mx-auto mb-4 text-brand-500" size={64} />
           <h1 className="mb-2 text-2xl font-bold">Shabash! Lesson Complete 🎉</h1>
           <p className="mb-6 text-slate-500">&quot;{lesson.title}&quot; — achha kaam kiya!</p>
           <button onClick={() => router.push('/dashboard')} className="btn-primary">
@@ -325,11 +325,11 @@ export default function LessonDetailPage() {
                     onClick={() => checkMcq(option)}
                     className={`rounded-xl border-2 px-4 py-3 text-left transition ${
                       showState && isSelected && isAnswer
-                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30'
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
                         : showState && isSelected && !isAnswer
                         ? 'border-red-500 bg-red-50 dark:bg-red-900/30'
                         : showState && isAnswer
-                        ? 'border-emerald-500'
+                        ? 'border-brand-500'
                         : 'border-slate-200 hover:border-brand-400 dark:border-slate-600'
                     }`}
                   >
@@ -379,7 +379,7 @@ export default function LessonDetailPage() {
                     onClick={() => setMatchLeft(pair.left)}
                     className={`w-full rounded-lg border-2 px-3 py-2 text-left text-sm ${
                       matchedPairs.includes(pair.left)
-                        ? 'border-emerald-500 bg-emerald-50 opacity-60 dark:bg-emerald-900/30'
+                        ? 'border-brand-500 bg-brand-50 opacity-60 dark:bg-brand-900/30'
                         : matchLeft === pair.left
                         ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
                         : 'border-slate-200 dark:border-slate-600'
@@ -400,7 +400,7 @@ export default function LessonDetailPage() {
                       onClick={() => pickMatchRight(right)}
                       className={`w-full rounded-lg border-2 px-3 py-2 text-left text-sm ${
                         isMatched
-                          ? 'border-emerald-500 bg-emerald-50 opacity-60 dark:bg-emerald-900/30'
+                          ? 'border-brand-500 bg-brand-50 opacity-60 dark:bg-brand-900/30'
                           : 'border-slate-200 dark:border-slate-600'
                       }`}
                     >
@@ -413,7 +413,7 @@ export default function LessonDetailPage() {
           )}
 
           {feedback === 'correct' && (
-            <p className="mt-3 flex items-center gap-1 text-sm text-emerald-600">
+            <p className="mt-3 flex items-center gap-1 text-sm text-brand-600">
               <CheckCircle size={14} /> Sahi jawab!
             </p>
           )}

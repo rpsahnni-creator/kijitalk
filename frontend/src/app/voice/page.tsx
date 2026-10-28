@@ -125,7 +125,7 @@ export default function VoicePage() {
         {score !== null && (
           <div className="card text-center">
             <div className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full text-3xl font-bold ${
-              score >= 80 ? 'bg-emerald-100 text-emerald-700' : score >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+              score >= 80 ? 'bg-brand-100 text-brand-700' : score >= 60 ? 'bg-accent-100 text-accent-700' : 'bg-red-100 text-red-700'
             }`}>
               {score}%
             </div>
@@ -136,7 +136,7 @@ export default function VoicePage() {
                   <span
                     key={word}
                     className={`rounded-full px-3 py-1 text-sm ${
-                      ws >= 80 ? 'bg-emerald-100 text-emerald-700' : ws >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                      ws >= 80 ? 'bg-brand-100 text-brand-700' : ws >= 60 ? 'bg-accent-100 text-accent-700' : 'bg-red-100 text-red-700'
                     }`}
                   >
                     {word} {ws}%

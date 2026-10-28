@@ -126,7 +126,7 @@ export default function RoleplayChatPage() {
                 {msg.corrections && msg.corrections.length > 0 && (
                   <div className="mt-2 border-t border-slate-200 pt-2 dark:border-slate-600">
                     {msg.corrections.map((c, j) => (
-                      <p key={j} className="text-xs text-amber-600">{c}</p>
+                      <p key={j} className="text-xs text-accent-600">{c}</p>
                     ))}
                   </div>
                 )}

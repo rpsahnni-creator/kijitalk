@@ -98,7 +98,7 @@ export default function CallModePage() {
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-lg flex-col items-center justify-center p-6">
         <div className="relative mb-8">
           <div
-            className={`absolute inset-0 rounded-full bg-violet-400/30 blur-2xl transition ${
+            className={`absolute inset-0 rounded-full bg-accent-400/30 blur-2xl transition ${
               status === 'listening' ? 'scale-150 animate-pulse' : status === 'speaking' ? 'scale-125' : 'scale-100'
             }`}
           />
@@ -152,9 +152,9 @@ export default function CallModePage() {
           <div className="card mb-6 w-full text-center">
             <p className="text-sm text-slate-500">Kiki</p>
             <p>{lastReply}</p>
-            {transcript && <p className="mt-2 text-sm text-violet-600">You: {transcript}</p>}
+            {transcript && <p className="mt-2 text-sm text-accent-600">You: {transcript}</p>}
             {teachingTip && (
-              <div className="mt-3 flex items-start gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-left text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+              <div className="mt-3 flex items-start gap-1.5 rounded-xl bg-accent-50 px-3 py-2 text-left text-xs text-accent-800 dark:bg-accent-900/30 dark:text-accent-200">
                 <Lightbulb size={14} className="mt-0.5 shrink-0" />
                 <p>{teachingTip}</p>
               </div>
@@ -163,7 +163,7 @@ export default function CallModePage() {
         )}
 
         {!active ? (
-          <button type="button" onClick={startCall} className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
+          <button type="button" onClick={startCall} className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30">
             <Phone size={36} />
           </button>
         ) : (

@@ -35,7 +35,7 @@ export default function CourseDetailScreen() {
               <Text className="font-semibold text-slate-900 dark:text-white">{lesson.title}</Text>
               <Text className="text-sm text-slate-500">{lesson.description}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#4f46e5" />
+            <Ionicons name="chevron-forward" size={20} color="#157a37" />
           </TouchableOpacity>
         </Link>
       ))}

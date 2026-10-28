@@ -69,7 +69,7 @@ export default function LessonsPage() {
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h2 className="font-semibold">{lesson.title}</h2>
           {lesson.recommended && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-accent-100 px-2 py-0.5 text-xs text-accent-700">
               <Star size={10} /> Recommended
             </span>
           )}
@@ -135,7 +135,7 @@ export default function LessonsPage() {
 
             {recommended.length > 0 && category === 'All' && (
               <section className="mb-8">
-                <h2 className="mb-4 font-semibold text-amber-600">{t('recommended')}</h2>
+                <h2 className="mb-4 font-semibold text-accent-600">{t('recommended')}</h2>
                 <div className="space-y-4">{recommended.map((l, i) => renderLesson(l, i))}</div>
               </section>
             )}

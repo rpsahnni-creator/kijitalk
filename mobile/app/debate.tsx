@@ -60,7 +60,7 @@ export default function DebateScreen() {
       </ScrollView>
 
       {topic && (
-        <Text className="mx-4 mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <Text className="mx-4 mt-3 rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-800">
           Topic: {topic.topic} · Level: {topic.level}
         </Text>
       )}

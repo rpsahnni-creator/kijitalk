@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { api } from '@/lib/api';
@@ -80,8 +80,8 @@ export default function OnboardingProfileScreen() {
   return (
     <ScrollView className="flex-1 bg-slate-50 px-6 pt-16 dark:bg-slate-900">
       <View className="mb-6 items-center">
-        <View className="mb-3 h-14 w-14 items-center justify-center rounded-2xl bg-brand-600">
-          <Text className="text-2xl font-bold text-white">K</Text>
+        <View className="mb-3 h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 p-2">
+          <Image source={require('../../assets/logo.png')} className="h-full w-full" resizeMode="contain" />
         </View>
         <Text className="text-2xl font-bold text-slate-900 dark:text-white">Apna profile set karo</Text>
         <Text className="text-slate-500">Bharat ke har student ke liye — bilkul free</Text>

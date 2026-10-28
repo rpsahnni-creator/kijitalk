@@ -70,7 +70,7 @@ export default function CallScreen() {
       <ScrollView ref={scrollRef} className="flex-1 px-4 pt-3" contentContainerStyle={{ paddingBottom: 16 }}>
         {messages.length === 0 && (
           <View className="mt-16 items-center">
-            <Ionicons name="mic-circle" size={64} color="#7c3aed" />
+            <Ionicons name="mic-circle" size={64} color="#157a37" />
             <Text className="mt-4 text-center text-slate-500">
               Type Hindi ya English mein — Kiki apni reply bolkar sunayegi!
             </Text>
