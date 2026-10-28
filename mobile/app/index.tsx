@@ -20,7 +20,7 @@ export default function WelcomeScreen() {
     <View className="flex-1 bg-brand-600 px-6 pt-16">
       <View className="mb-8 flex-row items-center gap-3">
         <View className="h-12 w-12 items-center justify-center rounded-2xl bg-white/20 p-1.5">
-          <Image source={require('../assets/logo.png')} className="h-full w-full" resizeMode="contain" />
+          <Image source={require('../assets/logo.png')} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
         </View>
         <Text className="text-2xl font-bold text-white">KijiTalk</Text>
       </View>

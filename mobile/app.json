@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -32,7 +27,16 @@
     "scheme": "kijitalk",
     "plugins": [
       "expo-router",
-      "expo-asset"
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
     ],
     "extra": {
       "apiUrl": "http://localhost:4001"
