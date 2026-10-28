@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useTutorStore } from '@/stores/tutorStore';
-import { api, ChatMessage, TutorEngines } from '@/lib/api';
+import { api, ApiError, ChatMessage, TutorEngines } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 
 export default function ChatScreen() {
@@ -41,8 +41,10 @@ export default function ChatScreen() {
         ...prev,
         { role: 'assistant', content: res.reply, corrections: res.corrections, teachingTip: res.teachingTip },
       ]);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, please try again.' }]);
+    } catch (err) {
+      const content =
+        err instanceof ApiError && err.limitReached ? err.message : 'Sorry, please try again.';
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } finally {
       setLoading(false);
       setTimeout(() => scrollRef.current?.scrollToEnd(), 100);

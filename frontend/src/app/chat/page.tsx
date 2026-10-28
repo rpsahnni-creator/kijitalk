@@ -8,7 +8,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { KikiAvatar } from '@/components/KikiAvatar';
 import { useAuthStore } from '@/stores/useStore';
 import { useTutorStore } from '@/stores/useTutorStore';
-import { api, ChatMessage, TutorEngines } from '@/lib/api';
+import { api, ApiError, ChatMessage, TutorEngines } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 
 export default function ChatPage() {
@@ -75,14 +75,12 @@ export default function ChatPage() {
         ...prev,
         { role: 'assistant', content: res.reply, corrections: res.corrections, teachingTip: res.teachingTip },
       ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Sorry Kiki had trouble responding. Please try again! 🙏',
-        },
-      ]);
+    } catch (err) {
+      const content =
+        err instanceof ApiError && err.limitReached
+          ? err.message
+          : 'Sorry Kiki had trouble responding. Please try again! 🙏';
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } finally {
       setLoading(false);
     }

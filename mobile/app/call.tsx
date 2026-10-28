@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useTutorStore } from '@/stores/tutorStore';
-import { api, TutorEngines } from '@/lib/api';
+import { api, ApiError, TutorEngines } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 
 // Expo managed workflow has no built-in speech-to-text (expo-speech is
@@ -44,8 +44,11 @@ export default function CallScreen() {
       sessionIdRef.current = res.session.id;
       setMessages((prev) => [...prev, { role: 'assistant', content: res.reply }]);
       speechService.speak(res.reply);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, please try again.' }]);
+    } catch (err) {
+      const content =
+        err instanceof ApiError && err.limitReached ? err.message : 'Sorry, please try again.';
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
+      if (err instanceof ApiError && err.limitReached) speechService.speak(err.message);
     } finally {
       setLoading(false);
       setTimeout(() => scrollRef.current?.scrollToEnd(), 100);

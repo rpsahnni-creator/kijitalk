@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import * as Speech from 'expo-speech';
 import { useAuthStore } from '@/stores/authStore';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 
 const PHRASES = [
   'The weather is beautiful today.',
@@ -30,8 +30,12 @@ export default function VoiceScreen() {
       );
       setScore(res.score);
       setFeedback(res.feedback);
-    } catch {
-      setFeedback('Could not analyze pronunciation. Try again.');
+    } catch (err) {
+      setFeedback(
+        err instanceof ApiError && err.limitReached
+          ? err.message
+          : 'Could not analyze pronunciation. Try again.'
+      );
     }
   };
 

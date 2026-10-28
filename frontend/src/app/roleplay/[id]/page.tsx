@@ -7,7 +7,7 @@ import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { KikiAvatar } from '@/components/KikiAvatar';
 import { useAuthStore } from '@/stores/useStore';
-import { api, RoleplayScenario, ChatMessage } from '@/lib/api';
+import { api, ApiError, RoleplayScenario, ChatMessage } from '@/lib/api';
 
 export default function RoleplayChatPage() {
   const params = useParams();
@@ -80,11 +80,12 @@ export default function RoleplayChatPage() {
         ...prev,
         { role: 'assistant', content: res.reply, corrections: res.corrections },
       ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' },
-      ]);
+    } catch (err) {
+      const content =
+        err instanceof ApiError && err.limitReached
+          ? err.message
+          : 'Sorry, something went wrong. Please try again.';
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } finally {
       setLoading(false);
     }

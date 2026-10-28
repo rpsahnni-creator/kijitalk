@@ -8,7 +8,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { KikiAvatar } from '@/components/KikiAvatar';
 import { useAuthStore } from '@/stores/useStore';
 import { useTutorStore } from '@/stores/useTutorStore';
-import { api, TutorEngines } from '@/lib/api';
+import { api, ApiError, TutorEngines } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 
 export default function CallModePage() {
@@ -70,7 +70,13 @@ export default function CallModePage() {
       speechService.speak(res.reply, () => {
         if (activeRef.current) listen();
       });
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.limitReached) {
+        setLastReply(err.message);
+        setStatus('speaking');
+        speechService.speak(err.message, () => setStatus('idle'));
+        return;
+      }
       setStatus('idle');
       if (activeRef.current) listen();
     }

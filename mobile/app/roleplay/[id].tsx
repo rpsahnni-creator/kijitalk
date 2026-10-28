@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
-import { api, ChatMessage } from '@/lib/api';
+import { api, ApiError, ChatMessage } from '@/lib/api';
 
 export default function RoleplayDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,6 +33,10 @@ export default function RoleplayDetailScreen() {
     try {
       const res = await api.post<{ reply: string; corrections: string[] }>(`/api/roleplay/${id}/message`, { sessionId, message: msg }, token);
       setMessages((prev) => [...prev, { role: 'assistant', content: res.reply, corrections: res.corrections }]);
+    } catch (err) {
+      const content =
+        err instanceof ApiError && err.limitReached ? err.message : 'Sorry, please try again.';
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } finally {
       setLoading(false);
       setTimeout(() => scrollRef.current?.scrollToEnd(), 100);

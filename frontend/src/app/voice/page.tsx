@@ -6,7 +6,7 @@ import { Mic, MicOff, Volume2, RotateCcw } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { useAuthStore } from '@/stores/useStore';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 
 const PRACTICE_PHRASES = [
@@ -60,8 +60,12 @@ export default function VoicePage() {
       setScore(result.score);
       setFeedback(result.feedback);
       setWordScores(result.wordScores);
-    } catch {
-      setFeedback('Could not analyze pronunciation. Try again.');
+    } catch (err) {
+      setFeedback(
+        err instanceof ApiError && err.limitReached
+          ? err.message
+          : 'Could not analyze pronunciation. Try again.'
+      );
     } finally {
       setLoading(false);
     }

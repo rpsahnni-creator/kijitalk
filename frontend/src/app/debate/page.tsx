@@ -7,7 +7,7 @@ import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { KikiAvatar } from '@/components/KikiAvatar';
 import { useAuthStore } from '@/stores/useStore';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 
 interface DebateTopic {
   id: string;
@@ -56,8 +56,12 @@ export default function DebatePage() {
         token
       );
       setMessages((prev) => [...prev, { role: 'assistant', content: res.reply }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Try again — apna point English mein bolo.' }]);
+    } catch (err) {
+      const content =
+        err instanceof ApiError && err.limitReached
+          ? err.message
+          : 'Try again — apna point English mein bolo.';
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } finally {
       setLoading(false);
     }

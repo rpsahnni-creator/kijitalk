@@ -2,10 +2,19 @@ import type { Exercise } from './exercise';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4001';
 
+export interface UsageStatus {
+  allowed: boolean;
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    public limitReached = false,
+    public usage?: UsageStatus
   ) {
     super(message);
     this.name = 'ApiError';
@@ -22,7 +31,7 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new ApiError(res.status, body.error ?? 'Request failed');
+    throw new ApiError(res.status, body.error ?? 'Request failed', body.limitReached === true, body.usage);
   }
   return res.json() as Promise<T>;
 }

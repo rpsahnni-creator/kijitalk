@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuthStore } from '@/stores/authStore';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 
 interface DebateTopic {
   id: string;
@@ -34,8 +34,12 @@ export default function DebateScreen() {
     try {
       const res = await api.post<{ reply: string }>('/api/debate/message', { topicId, message: msg, history }, token);
       setMessages((prev) => [...prev, { role: 'assistant', content: res.reply }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Try again — apna point English mein bolo.' }]);
+    } catch (err) {
+      const content =
+        err instanceof ApiError && err.limitReached
+          ? err.message
+          : 'Try again — apna point English mein bolo.';
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } finally {
       setLoading(false);
     }
