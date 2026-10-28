@@ -14,6 +14,9 @@ const envSchema = z.object({
   CLAUDE_MODEL: z.string().default('claude-sonnet-5-5'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   GOOGLE_CLIENT_ID: z.string().optional(),
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
   SPEECH_SERVICE_URL: z.string().default('http://localhost:5001'),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });

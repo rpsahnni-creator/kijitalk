@@ -14,6 +14,7 @@ import {
   Phone,
   Swords,
   GraduationCap,
+  Crown,
 } from 'lucide-react';
 import { navLabel } from '@/lib/i18n';
 import { useAuthStore } from '@/stores/useStore';
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/lessons', key: 'lessons' as const, icon: BookOpen, label: 'Lessons' },
   { href: '/progress', key: 'progress' as const, icon: BarChart3 },
   { href: '/settings', key: 'settings' as const, icon: Settings },
+  { href: '/pricing', key: 'settings' as const, icon: Crown, label: 'Premium' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

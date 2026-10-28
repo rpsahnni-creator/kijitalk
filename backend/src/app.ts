@@ -27,7 +27,14 @@ export function createApp() {
       credentials: true,
     })
   );
-  app.use(express.json({ limit: '10mb' }));
+  app.use(
+    express.json({
+      limit: '10mb',
+      verify: (req, _res, buf) => {
+        (req as express.Request).rawBody = buf;
+      },
+    })
+  );
   app.use(
     rateLimit({
       windowMs: 15 * 60 * 1000,

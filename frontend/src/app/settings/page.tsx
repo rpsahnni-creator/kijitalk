@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moon, Sun, Bell, LogOut, User, Target } from 'lucide-react';
+import Link from 'next/link';
+import { Moon, Sun, Bell, LogOut, User, Target, Crown, ChevronRight } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { useAuthStore, useSettingsStore } from '@/stores/useStore';
@@ -16,10 +17,19 @@ export default function SettingsPage() {
   const [dailyGoal, setDailyGoal] = useState(15);
   const [voiceSpeed, setVoiceSpeed] = useState(0.9);
   const [accent, setAccent] = useState<'indian' | 'british' | 'american'>('indian');
+  const [tier, setTier] = useState<'free' | 'premium'>('free');
 
   useEffect(() => {
     if (initialized && !user) router.replace('/login');
   }, [user, initialized, router]);
+
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get<{ tier: 'free' | 'premium' }>('/api/subscription/status', token)
+      .then((d) => setTier(d.tier))
+      .catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     if (profile?.settings) {
@@ -68,6 +78,17 @@ export default function SettingsPage() {
             <p className="text-xs capitalize text-brand-600">{profile?.targetLevel ?? 'beginner'} level</p>
           </div>
         </div>
+
+        <Link href="/pricing" className="card mb-6 flex items-center justify-between transition hover:scale-[1.01]">
+          <div className="flex items-center gap-3">
+            <Crown className={tier === 'premium' ? 'text-accent-500' : 'text-slate-400'} size={20} />
+            <div>
+              <p className="font-medium">{tier === 'premium' ? 'Premium Plan' : 'Free Plan'}</p>
+              <p className="text-sm text-slate-500">{tier === 'premium' ? 'Unlimited AI practice active' : 'Upgrade karo unlimited practice ke liye'}</p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-slate-400" />
+        </Link>
 
         <div className="space-y-4">
           <div className="card flex items-center justify-between">

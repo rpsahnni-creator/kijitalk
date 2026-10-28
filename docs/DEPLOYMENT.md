@@ -83,11 +83,21 @@ CLAUDE_MODEL=claude-sonnet-5-5
 JWT_SECRET=<node -e "console.log(require('crypto').randomBytes(48).toString('hex'))">
 
 GOOGLE_CLIENT_ID=             # optional — enables the Google Sign-In button
+
+# Razorpay — powers real Premium purchases (/api/subscription/checkout, /verify, /webhook).
+# Leave all three blank to keep checkout disabled; the rest of the app works fine without them.
+RAZORPAY_KEY_ID=              # Razorpay Dashboard > Settings > API Keys
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=      # Dashboard > Settings > Webhooks, URL: https://your-api/api/subscription/webhook, event: payment.captured
+
 SPEECH_SERVICE_URL=https://your-speech.railway.app   # optional
 LOG_LEVEL=info
 ```
 
 > ⚠️ `JWT_SECRET` must be a new random value in production, not the one committed to your local `backend/.env`. Rotating it invalidates all existing login sessions.
+
+> ⚠️ Switch Razorpay from Test Mode to Live Mode (separate key pair) only once you've actually tested
+> a real checkout end-to-end. Test-mode keys (`rzp_test_...`) never move real money.
 
 ---
 
@@ -192,9 +202,13 @@ Service Settings → Networking → Custom Domain
 
 ## Known Gaps Before a Real Launch
 
-- **No payment gateway wired up.** `backend/src/routes/subscription.routes.ts` only exposes a `dev-set-tier`
-  endpoint, and it's disabled whenever `NODE_ENV=production`. Selling the Premium tier for real needs a
-  provider (Razorpay/Stripe/etc.) integrated before launch.
+- **Razorpay is wired up but needs real keys and end-to-end testing.** Code (order creation,
+  signature verification, webhook, 30-day renewal) is in `backend/src/routes/subscription.routes.ts`
+  and `backend/src/services/payment.service.ts`. Get test keys from the Razorpay Dashboard, run a full
+  test-mode purchase on the `/pricing` web page, confirm the webhook fires, then switch to live keys.
+- **Mobile has no native Razorpay checkout.** `react-native-razorpay` needs a custom dev client /
+  EAS build (not Expo Go), so the mobile Settings screen instead opens the web app's `/pricing` page
+  in the device browser (`EXPO_PUBLIC_WEB_URL`). Revisit if an in-app native checkout is required.
 - **Speech service is optional and unhosted by default** — decide whether voice pronunciation scoring is
   in scope for launch before skipping step 4.
 
@@ -211,7 +225,7 @@ Service Settings → Networking → Custom Domain
 - [ ] Gemini API key active
 - [ ] Speech service running (optional)
 - [ ] Mobile app points to production API
-- [ ] Payment gateway wired up, if selling Premium
+- [ ] Razorpay live keys set, webhook configured, one real test purchase completed
 - [ ] Test signup, login, chat, voice, roleplay, debate end-to-end
 
 ---

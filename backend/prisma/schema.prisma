@@ -38,6 +38,12 @@ enum SubscriptionTier {
   premium
 }
 
+enum PaymentStatus {
+  created
+  paid
+  failed
+}
+
 model User {
   id                  String      @id @default(cuid())
   email               String      @unique
@@ -56,7 +62,10 @@ model User {
   learningGoal        String?
   onboardingCompleted Boolean     @default(false)
 
-  subscriptionTier SubscriptionTier @default(free)
+  subscriptionTier      SubscriptionTier @default(free)
+  // null while on the free tier, or once never purchased. See subscription.service.ts#effectiveTier
+  // for the lazy downgrade-on-read check — nothing cron-based flips this back to free.
+  subscriptionExpiresAt DateTime?
   // Resets to 0 whenever aiUsageResetAt rolls past the current day (see subscription.service.ts).
   aiMessagesToday  Int              @default(0)
   aiUsageResetAt   DateTime         @default(now())
@@ -81,6 +90,7 @@ model User {
   progress     Progress[]
   chatSessions ChatSession[]
   mistakeLogs  MistakeLog[]
+  payments     Payment[]
 
   @@map("users")
 }
@@ -180,4 +190,20 @@ model ChatMessage {
 
   @@index([sessionId, timestamp])
   @@map("chat_messages")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?
+  amountInr         Int
+  status            PaymentStatus @default(created)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("payments")
 }

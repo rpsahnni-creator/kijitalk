@@ -22,9 +22,21 @@ export interface UsageStatus {
   remaining: number;
 }
 
+/**
+ * The tier to actually gate behavior on. A paid premium period lapses once
+ * subscriptionExpiresAt passes; nothing cron-based flips subscriptionTier back
+ * to 'free' in the database, so every usage check re-derives it here instead.
+ */
+export function effectiveTier(user: User): 'free' | 'premium' {
+  if (user.subscriptionTier === 'premium' && user.subscriptionExpiresAt && user.subscriptionExpiresAt < new Date()) {
+    return 'free';
+  }
+  return user.subscriptionTier;
+}
+
 export function checkAiUsage(user: User): UsageStatus {
   resetUsageIfNeeded(user);
-  const plan = getPlan(user.subscriptionTier);
+  const plan = getPlan(effectiveTier(user));
   if (plan.dailyAiActions === Infinity) {
     return { allowed: true, used: user.aiMessagesToday, limit: Infinity, remaining: Infinity };
   }
@@ -38,5 +50,5 @@ export function recordAiUsage(user: User): void {
 }
 
 export function canUseClaudeEngine(user: User): boolean {
-  return getPlan(user.subscriptionTier).claudeAccess;
+  return getPlan(effectiveTier(user)).claudeAccess;
 }
