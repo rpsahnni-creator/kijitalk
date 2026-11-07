@@ -32,8 +32,8 @@ export default function SignupPage() {
       setError('Apna naam likho');
       return;
     }
-    if (password.length < 6) {
-      setError('Password kam se kam 6 characters ka hona chahiye');
+    if (password.length < 8) {
+      setError('Password kam se kam 8 characters ka hona chahiye');
       return;
     }
     signingUp.current = true;
@@ -58,7 +58,7 @@ export default function SignupPage() {
     }
   };
 
-  const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
+  const strength = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
 
   return (
     <AuthLayout
@@ -110,9 +110,9 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input-field pr-11"
-              placeholder="Min. 6 characters"
+              placeholder="Min. 8 characters"
               required
-              minLength={6}
+              minLength={8}
             />
             <button
               type="button"
@@ -145,7 +145,7 @@ export default function SignupPage() {
           {loading && <Loader2 size={16} className="animate-spin" />}
           {loading ? 'Account ban raha hai…' : 'Create account'}
         </button>
-        <p className="text-center text-xs text-slate-400">Sign up karke aap hamari terms se agree karte ho.</p>
+        <p className="text-center text-xs text-slate-400">Account banne ke baad aapke email pe ek verification link aayega.</p>
       </form>
 
       {isGoogleSignInConfigured() && (

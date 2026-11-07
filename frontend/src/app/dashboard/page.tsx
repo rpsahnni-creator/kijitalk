@@ -9,6 +9,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { KikiAvatar } from '@/components/KikiAvatar';
 import { FeatureIcon, type FeatureIconName } from '@/components/FeatureIcon';
 import { FeatureTile, SectionTitle, Skeleton } from '@/components/ui';
+import { EmailVerifyBanner } from '@/components/EmailVerifyBanner';
 import { useAuthStore } from '@/stores/useStore';
 import { api, Lesson, DashboardData } from '@/lib/api';
 import { speechService } from '@/lib/speech';
@@ -161,6 +162,8 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+
+        <EmailVerifyBanner />
 
         {/* Icon grid sections */}
         {sections.map((section) => (

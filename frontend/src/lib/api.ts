@@ -1,6 +1,8 @@
 import type { Exercise } from './exercise';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
+/** auth-service (Django): sign-in, sessions, passwords, email verification. */
+export const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:8100';
 
 export interface UsageStatus {
   allowed: boolean;
@@ -14,17 +16,31 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public limitReached = false,
-    public usage?: UsageStatus
+    public usage?: UsageStatus,
+    public fields?: Record<string, string[]>
   ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
+// The auth store registers this: on a 401 the request gets a fresh access token
+// (via the httpOnly refresh cookie) and is retried once.
+let accessTokenRefresher: (() => Promise<string | null>) | null = null;
+export function setAccessTokenRefresher(fn: (() => Promise<string | null>) | null) {
+  accessTokenRefresher = fn;
+}
+
+async function toApiError(res: Response): Promise<ApiError> {
+  const body = await res.json().catch(() => ({ error: res.statusText }));
+  return new ApiError(res.status, body.error ?? 'Request failed', body.limitReached === true, body.usage, body.fields);
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
-  token?: string | null
+  token?: string | null,
+  retried = false
 ): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -37,10 +53,12 @@ async function request<T>(
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new ApiError(res.status, body.error ?? 'Request failed', body.limitReached === true, body.usage);
+  if (res.status === 401 && token && !retried && accessTokenRefresher) {
+    const fresh = await accessTokenRefresher();
+    if (fresh) return request<T>(path, options, fresh, true);
   }
+
+  if (!res.ok) throw await toApiError(res);
 
   return res.json() as Promise<T>;
 }
@@ -52,6 +70,35 @@ export const api = {
   patch: <T>(path: string, body: unknown, token?: string | null) =>
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }, token),
 };
+
+/** Calls auth-service with the refresh cookie (credentials: 'include'). */
+export async function authRequest<T>(path: string, body?: unknown, token?: string | null): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-KT-Client': 'web' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${AUTH_URL}${path}`, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers,
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json() as Promise<T>;
+}
+
+/** The login account as auth-service describes it. */
+export interface AuthAccount {
+  id: number;
+  email: string;
+  displayName: string;
+  emailVerified: boolean;
+  hasPassword: boolean;
+}
+
+export interface AuthSession {
+  access: string;
+  user: AuthAccount;
+  message?: string;
+}
 
 export interface UserProfile {
   id: string;
@@ -65,6 +112,8 @@ export interface UserProfile {
   state?: string;
   learningGoal?: string;
   onboardingCompleted?: boolean;
+  /** From the auth-service access token, echoed by GET /api/auth/me. */
+  emailVerified?: boolean;
   streak: number;
   totalMinutes: number;
   lessonsCompleted: number;

@@ -12,7 +12,12 @@ const envSchema = z.object({
   GEMINI_MODEL: z.string().default('gemini-1.5-pro'),
   ANTHROPIC_API_KEY: z.string().optional(),
   CLAUDE_MODEL: z.string().default('claude-sonnet-5-5'),
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  // Shared with auth-service (Django), which issues the access tokens this API trusts.
+  AUTH_JWT_SECRET: z.string().min(32, 'AUTH_JWT_SECRET must be at least 32 characters'),
+  AUTH_JWT_ISSUER: z.string().default('kijitalk-auth'),
+  AUTH_JWT_AUDIENCE: z.string().default('kijitalk-api'),
+  // Legacy: signed the old 30-day tokens before auth moved to auth-service. Unused now.
+  JWT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
@@ -40,7 +45,9 @@ export const env = parsed.success
       GEMINI_API_KEY: 'test-key',
       GEMINI_MODEL: 'gemini-1.5-pro',
       CLAUDE_MODEL: 'claude-sonnet-5-5',
-      JWT_SECRET: 'test-jwt-secret-at-least-32-characters-long',
+      AUTH_JWT_SECRET: 'test-auth-jwt-secret-at-least-32-characters',
+      AUTH_JWT_ISSUER: 'kijitalk-auth',
+      AUTH_JWT_AUDIENCE: 'kijitalk-api',
       SPEECH_SERVICE_URL: 'http://localhost:5001',
       LOG_LEVEL: 'error',
     } as z.infer<typeof envSchema>);

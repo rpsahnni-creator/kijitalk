@@ -1,6 +1,8 @@
 import type { Exercise } from './exercise';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4001';
+/** auth-service (Django): sign-in, sessions, passwords, email verification. */
+export const AUTH_URL = process.env.EXPO_PUBLIC_AUTH_URL ?? 'http://localhost:8100';
 
 export interface UsageStatus {
   allowed: boolean;
@@ -21,7 +23,19 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}, token?: string | null): Promise<T> {
+// Registered by the auth store: on a 401 the request gets a new access token
+// and is retried once.
+let accessTokenRefresher: (() => Promise<string | null>) | null = null;
+export function setAccessTokenRefresher(fn: (() => Promise<string | null>) | null) {
+  accessTokenRefresher = fn;
+}
+
+async function toApiError(res: Response): Promise<ApiError> {
+  const body = await res.json().catch(() => ({ error: res.statusText }));
+  return new ApiError(res.status, body.error ?? 'Request failed', body.limitReached === true, body.usage);
+}
+
+async function request<T>(path: string, options: RequestInit = {}, token?: string | null, retried = false): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -29,10 +43,11 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new ApiError(res.status, body.error ?? 'Request failed', body.limitReached === true, body.usage);
+  if (res.status === 401 && token && !retried && accessTokenRefresher) {
+    const fresh = await accessTokenRefresher();
+    if (fresh) return request<T>(path, options, fresh, true);
   }
+  if (!res.ok) throw await toApiError(res);
   return res.json() as Promise<T>;
 }
 
@@ -43,6 +58,34 @@ export const api = {
   patch: <T>(path: string, body: unknown, token?: string | null) =>
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }, token),
 };
+
+/** Calls auth-service as a mobile client: no cookies, refresh token in the body. */
+export async function authRequest<T>(path: string, body?: unknown, token?: string | null): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-KT-Client': 'mobile' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${AUTH_URL}${path}`, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json() as Promise<T>;
+}
+
+export interface AuthAccount {
+  id: number;
+  email: string;
+  displayName: string;
+  emailVerified: boolean;
+  hasPassword: boolean;
+}
+
+export interface AuthSession {
+  access: string;
+  refresh: string;
+  user: AuthAccount;
+  message?: string;
+}
 
 export interface UserProfile {
   id: string;

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { ApiError } from '@/lib/api';
+
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:3100';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -34,12 +36,16 @@ export default function LoginScreen() {
         keyboardType="email-address"
       />
       <TextInput
-        className="mb-6 rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-700 dark:text-white"
+        className="mb-2 rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-700 dark:text-white"
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
+      {/* Reset links are emailed and open the web app, so the form lives there too. */}
+      <TouchableOpacity onPress={() => Linking.openURL(`${WEB_URL}/forgot-password`)} className="mb-6 self-end">
+        <Text className="text-sm font-medium text-brand-600">Password bhool gaye?</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={handleLogin}
