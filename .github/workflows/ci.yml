@@ -2,9 +2,9 @@ name: KijiTalk CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, develop]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   backend:
@@ -20,6 +20,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
       - run: npm ci || npm install
+      # Typecheck needs the generated Prisma client types.
+      - run: npx prisma generate
       - run: npm run lint
       - run: npm test
         env:
@@ -40,7 +42,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci || npm install
-      - run: npm run lint
+      # `next lint` stops at an interactive ESLint setup prompt (no config in
+      # the repo), so CI typechecks instead.
+      - run: npx tsc --noEmit
       - run: npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4001
