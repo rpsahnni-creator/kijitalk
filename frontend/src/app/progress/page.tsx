@@ -19,11 +19,12 @@ import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { useAuthStore, useSettingsStore } from '@/stores/useStore';
 import { EmptyState, PageHeader, Skeleton } from '@/components/ui';
+import { FeatureIcon } from '@/components/FeatureIcon';
 import { api, DashboardData } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { BADGES } from '@/lib/badges';
 
-const PIE_COLORS = ['#952248', '#fdc403', '#d7517d', '#b88e00', '#57142a', '#ffe58a'];
+const PIE_COLORS = ['#dc143c', '#006400', '#e5e500', '#fb5274', '#45bd49', '#82112d'];
 const ACTIVITY_LABELS: Record<string, string> = {
   chat: 'Kiki Chat',
   lesson: 'Lessons',
@@ -90,7 +91,7 @@ export default function ProgressPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:py-10">
-        <PageHeader icon={BarChart3} title={t('progress')} subtitle="Pichle 30 din ki learning journey" />
+        <PageHeader feature="progress" title={t('progress')} subtitle="Pichle 30 din ki learning journey" />
 
         <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
@@ -110,8 +111,8 @@ export default function ProgressPage() {
           ))}
         </div>
 
-        <div className="card mb-8">
-          <h2 className="section-title">🏅 Badges</h2>
+        <div id="badges" className="card mb-8 scroll-mt-20">
+          <h2 className="section-title flex items-center gap-2"><FeatureIcon name="badges" size={28} /> Badges</h2>
           <div className="flex flex-wrap gap-3">
             {BADGES.map((badge) => {
               const earned = (data?.stats.badges ?? []).includes(badge.id);
@@ -147,7 +148,7 @@ export default function ProgressPage() {
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: axisColor }} tickLine={false} axisLine={false} tickFormatter={(d: string) => d.slice(5)} />
                   <YAxis tick={{ fontSize: 11, fill: axisColor }} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip contentStyle={tooltipStyle} cursor={{ fill: darkMode ? '#1e293b' : '#f8fafc' }} />
-                  <Bar dataKey="minutes" name="Minutes" fill="#952248" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="minutes" name="Minutes" fill="#dc143c" radius={[6, 6, 0, 0]} maxBarSize={28} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -224,8 +225,8 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        <div className="card mb-8">
-          <h2 className="section-title flex items-center gap-2"><Trophy size={16} className="text-accent-500" /> Weekly leaderboard</h2>
+        <div id="leaderboard" className="card mb-8 scroll-mt-20">
+          <h2 className="section-title flex items-center gap-2"><FeatureIcon name="leaderboard" size={28} /> Weekly leaderboard</h2>
           <div className="space-y-2">
             {leaderboard.length === 0 && <p className="text-sm text-slate-500">Is hafte abhi tak koi activity nahi.</p>}
             {leaderboard.map((entry) => {

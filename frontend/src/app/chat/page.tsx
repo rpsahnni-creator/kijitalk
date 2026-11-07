@@ -125,8 +125,8 @@ export default function ChatPage() {
   const firstName = profile?.displayName?.split(' ')[0];
 
   return (
-    <AppShell>
-      <div className="mx-auto flex h-[calc(100dvh-9.5rem)] max-w-3xl flex-col px-3 py-4 sm:px-6 lg:h-screen lg:py-6">
+    <AppShell footer={false}>
+      <div className="mx-auto flex h-[calc(100dvh-8.25rem-env(safe-area-inset-bottom))] max-w-3xl flex-col px-3 py-4 sm:px-6 lg:h-[calc(100dvh-3.75rem)] lg:py-6">
         <header className="mb-4 flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <KikiAvatar size="md" />

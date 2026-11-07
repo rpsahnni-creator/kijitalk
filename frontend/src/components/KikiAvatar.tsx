@@ -29,17 +29,17 @@ export function KikiAvatar({ size = 'sm', className = '', animated = false, onli
       role="img"
       aria-label="Kiki"
     >
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-brand-400 via-accent-400 to-brand-600 p-[2px] shadow-md shadow-brand-900/10">
-        <div className="relative h-full w-full overflow-hidden rounded-full bg-gradient-to-br from-brand-50 to-accent-50">
+      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-brand-500 via-accent-400 to-leaf-700 p-[2px] shadow-md shadow-brand-900/10">
+        <div className="relative h-full w-full overflow-hidden rounded-full bg-gradient-to-br from-accent-50 to-leaf-50">
           <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
             <defs>
               <linearGradient id={hair} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#bf2c5c" />
-                <stop offset="100%" stopColor="#741b38" />
+                <stop offset="0%" stopColor="#f02a52" />
+                <stop offset="100%" stopColor="#990f2e" />
               </linearGradient>
               <linearGradient id={skin} x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#fde68a" />
-                <stop offset="100%" stopColor="#fdc403" />
+                <stop offset="0%" stopColor="#ffe9c7" />
+                <stop offset="100%" stopColor="#ffd59a" />
               </linearGradient>
             </defs>
             <ellipse cx="50" cy="58" rx="32" ry="30" fill={`url(#${skin})`} />
@@ -51,11 +51,11 @@ export function KikiAvatar({ size = 'sm', className = '', animated = false, onli
             <circle cx="62" cy="54" r="4" fill="#1e293b" />
             <circle cx="39" cy="53" r="1.5" fill="white" />
             <circle cx="63" cy="53" r="1.5" fill="white" />
-            <path d="M42 66 Q50 74 58 66" stroke="#741b38" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-            <ellipse cx="32" cy="62" rx="5" ry="3" fill="#ffe58a" opacity="0.7" />
-            <ellipse cx="68" cy="62" rx="5" ry="3" fill="#ffe58a" opacity="0.7" />
-            <circle cx="78" cy="22" r="3" fill="#fdc403" opacity="0.9" />
-            <circle cx="22" cy="28" r="2" fill="#e283a2" opacity="0.8" />
+            <path d="M42 66 Q50 74 58 66" stroke="#990f2e" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            <ellipse cx="32" cy="62" rx="5" ry="3" fill="#ff91a7" opacity="0.55" />
+            <ellipse cx="68" cy="62" rx="5" ry="3" fill="#ff91a7" opacity="0.55" />
+            <circle cx="78" cy="22" r="3" fill="#ffff00" opacity="0.95" />
+            <circle cx="22" cy="28" r="2" fill="#006400" opacity="0.8" />
           </svg>
         </div>
       </div>

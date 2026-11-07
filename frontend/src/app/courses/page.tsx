@@ -60,7 +60,7 @@ export default function CoursesPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:py-10">
-        <PageHeader icon={GraduationCap} title="Courses · कोर्स" subtitle="Level-wise structured learning paths" />
+        <PageHeader feature="courses" title="Courses · कोर्स" subtitle="Level-wise structured learning paths" />
 
         {error && <ErrorState message="Courses load nahi ho paye." onRetry={load} />}
 

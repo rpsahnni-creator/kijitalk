@@ -96,8 +96,8 @@ export default function DebatePage() {
   const topic = topics?.find((t) => t.id === topicId);
 
   return (
-    <AppShell>
-      <div className="mx-auto flex h-[calc(100dvh-9.5rem)] max-w-3xl flex-col px-3 py-4 sm:px-6 lg:h-screen lg:py-6">
+    <AppShell footer={false}>
+      <div className="mx-auto flex h-[calc(100dvh-8.25rem-env(safe-area-inset-bottom))] max-w-3xl flex-col px-3 py-4 sm:px-6 lg:h-[calc(100dvh-3.75rem)] lg:py-6">
         <header className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-100 dark:bg-brand-950/60 dark:text-brand-300 dark:ring-brand-900">

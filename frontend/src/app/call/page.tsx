@@ -165,7 +165,7 @@ export default function CallModePage() {
 
   return (
     <AppShell>
-      <div className="mx-auto flex min-h-[calc(100dvh-9.5rem)] max-w-lg flex-col items-center justify-center px-6 py-8 lg:min-h-screen">
+      <div className="mx-auto flex min-h-[calc(100dvh-12rem)] max-w-lg flex-col items-center justify-center px-6 py-8 lg:min-h-[calc(100dvh-7.5rem)]">
         <div className="relative mb-8 flex h-40 w-40 items-center justify-center">
           {status === 'listening' && (
             <>

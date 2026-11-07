@@ -1,28 +1,39 @@
 'use client';
 
+import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { FeatureIcon, type FeatureIconName } from './FeatureIcon';
 
 export function PageHeader({
   title,
   subtitle,
   icon: Icon,
+  feature,
   actions,
   eyebrow,
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   icon?: LucideIcon;
+  /** Illustrated feature icon shown beside the title. */
+  feature?: FeatureIconName;
   actions?: React.ReactNode;
   eyebrow?: React.ReactNode;
 }) {
   return (
     <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="flex items-start gap-4">
-        {Icon && (
-          <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-100 dark:bg-brand-950/60 dark:text-brand-300 dark:ring-brand-900 sm:flex">
-            <Icon size={22} />
+      <div className="flex items-center gap-4">
+        {feature ? (
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-card ring-1 ring-slate-200/70 dark:bg-slate-900 dark:ring-slate-800">
+            <FeatureIcon name={feature} size={44} />
           </div>
+        ) : (
+          Icon && (
+            <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-100 dark:bg-brand-950/60 dark:text-brand-300 dark:ring-brand-900 sm:flex">
+              <Icon size={22} />
+            </div>
+          )
         )}
         <div>
           {eyebrow && (
@@ -153,5 +164,46 @@ export function SegmentedEngine({
         </button>
       ))}
     </div>
+  );
+}
+
+/** Section heading in the home-grid style: DarkGreen title with a crimson underline. */
+export function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-end justify-between gap-3">
+      <div className="flex-1">
+        <h2 className="font-display text-xl font-bold text-leaf-700 dark:text-leaf-400">{children}</h2>
+        <div className="mt-1 h-[3px] rounded-full bg-gradient-to-r from-brand-600 via-brand-300 to-transparent" />
+      </div>
+      {action}
+    </div>
+  );
+}
+
+/** Illustrated icon + label tile, with an optional count badge. */
+export function FeatureTile({
+  href,
+  icon,
+  label,
+  badge,
+}: {
+  href: string;
+  icon: FeatureIconName;
+  label: string;
+  badge?: number | string | null;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group relative flex flex-col items-center gap-2 rounded-2xl px-1 py-3 text-center transition hover:bg-white hover:shadow-card dark:hover:bg-slate-900"
+    >
+      {badge !== undefined && badge !== null && badge !== 0 && (
+        <span className="absolute left-1/2 top-1 z-10 -translate-x-[150%] rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white shadow ring-2 ring-white dark:ring-slate-950">
+          {badge}
+        </span>
+      )}
+      <FeatureIcon name={icon} size={56} className="transition duration-200 group-hover:-translate-y-1 group-hover:scale-105" />
+      <span className="text-[13px] font-semibold leading-tight text-slate-800 dark:text-slate-200">{label}</span>
+    </Link>
   );
 }

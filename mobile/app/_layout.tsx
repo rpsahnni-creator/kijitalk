@@ -12,7 +12,16 @@ export default function RootLayout() {
   }, [initAuth]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        // Crimson header with a yellow title for every inner screen.
+        headerStyle: { backgroundColor: '#dc143c' },
+        headerTintColor: '#ffffff',
+        headerTitleStyle: { color: '#ffff33', fontWeight: '800' },
+        headerShadowVisible: false,
+      }}
+    >
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />

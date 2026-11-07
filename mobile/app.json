@@ -16,7 +16,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#952248"
+        "backgroundColor": "#dc143c"
       },
       "package": "com.kijitalk.app"
     },

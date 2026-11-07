@@ -19,8 +19,8 @@ const PRACTICE_PHRASES = [
 ];
 
 function scoreTone(score: number) {
-  if (score >= 80) return { ring: '#2fa233', text: 'text-success-600', chip: 'bg-success-50 text-success-700 dark:bg-success-900/30 dark:text-success-300', label: 'Excellent!' };
-  if (score >= 60) return { ring: '#e0ad00', text: 'text-accent-600', chip: 'bg-accent-50 text-accent-800 dark:bg-accent-900/30 dark:text-accent-300', label: 'Good — thoda aur!' };
+  if (score >= 80) return { ring: '#006400', text: 'text-success-600', chip: 'bg-success-50 text-success-700 dark:bg-success-900/30 dark:text-success-300', label: 'Excellent!' };
+  if (score >= 60) return { ring: '#c9c400', text: 'text-accent-600', chip: 'bg-accent-50 text-accent-800 dark:bg-accent-900/30 dark:text-accent-300', label: 'Good — thoda aur!' };
   return { ring: '#ef4444', text: 'text-red-500', chip: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300', label: 'Keep practicing' };
 }
 
@@ -145,7 +145,7 @@ export default function VoicePage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 lg:py-10">
-        <PageHeader icon={Mic} title="Voice Practice" subtitle="Phrase bolo aur turant pronunciation feedback pao" />
+        <PageHeader feature="voice" title="Voice Practice" subtitle="Phrase bolo aur turant pronunciation feedback pao" />
 
         <div className="card mb-6">
           <div className="mb-4 flex items-center justify-between">

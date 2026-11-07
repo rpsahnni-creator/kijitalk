@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { AppHeader } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import { api, Lesson } from '@/lib/api';
 
@@ -19,9 +20,11 @@ export default function LessonsScreen() {
   const filtered = category === 'All' ? lessons : lessons.filter((l) => l.category === category);
 
   return (
-    <View className="flex-1 bg-slate-50 pt-14 dark:bg-slate-900">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <AppHeader title="Lessons" />
+      <View className="h-4" />
       <View className="px-6 pb-2">
-        <Text className="text-xl font-bold text-slate-900 dark:text-white">All Lessons</Text>
+        <Text className="text-xl font-bold text-leaf-700 dark:text-leaf-400">All Lessons · सभी पाठ</Text>
         <Text className="text-slate-500">School, exams, daily life — Bharat ke students ke liye</Text>
       </View>
 
@@ -60,7 +63,7 @@ export default function LessonsScreen() {
                   {lesson.durationMinutes} min · {lesson.category}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#952248" />
+              <Ionicons name="chevron-forward" size={20} color="#dc143c" />
             </TouchableOpacity>
           </Link>
         ))}

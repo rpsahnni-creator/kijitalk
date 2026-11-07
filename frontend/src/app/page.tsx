@@ -4,28 +4,19 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  BookOpen,
-  CheckCircle2,
-  Languages,
-  MessageCircle,
-  Mic,
-  Phone,
-  Sparkles,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, CheckCircle2, Languages, Sparkles } from 'lucide-react';
 import { KikiAvatar } from '@/components/KikiAvatar';
+import { FeatureIcon, type FeatureIconName } from '@/components/FeatureIcon';
+import { BrandFooter } from '@/components/AppShell';
 import { useAuthStore } from '@/stores/useStore';
 
-const FEATURES = [
-  { icon: MessageCircle, title: 'Chat with Kiki', desc: 'Hindi mein likho — Kiki English mein translate karke, galti sudhaar ke sikhati hai.' },
-  { icon: Mic, title: 'Pronunciation score', desc: 'Phrase bolo aur har word ka score pao. Roz thoda better.' },
-  { icon: Phone, title: 'Voice call mode', desc: 'Kiki se phone jaisi baat — bina type kiye, sirf bolke practice.' },
-  { icon: Users, title: 'Real-life roleplay', desc: 'Chai tapri, auto, interview, PTM — asli situations ki practice.' },
-  { icon: BookOpen, title: '500+ lessons', desc: 'Class 6 se college tak — school, exams aur daily life ke liye.' },
-  { icon: TrendingUp, title: 'Streaks & badges', desc: 'Daily goal, XP, leaderboard — practice ki aadat banao.' },
+const FEATURES: Array<{ icon: FeatureIconName; title: string; desc: string }> = [
+  { icon: 'chat', title: 'Chat with Kiki', desc: 'Hindi mein likho — Kiki English mein translate karke, galti sudhaar ke sikhati hai.' },
+  { icon: 'voice', title: 'Pronunciation score', desc: 'Phrase bolo aur har word ka score pao. Roz thoda better.' },
+  { icon: 'call', title: 'Voice call mode', desc: 'Kiki se phone jaisi baat — bina type kiye, sirf bolke practice.' },
+  { icon: 'roleplay', title: 'Real-life roleplay', desc: 'Chai tapri, auto, interview, PTM — asli situations ki practice.' },
+  { icon: 'lessons', title: '500+ lessons', desc: 'Class 6 se college tak — school, exams aur daily life ke liye.' },
+  { icon: 'streak', title: 'Streaks & badges', desc: 'Daily goal, XP, leaderboard — practice ki aadat banao.' },
 ];
 
 const STEPS = [
@@ -144,16 +135,14 @@ export default function WelcomePage() {
       {/* Features */}
       <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">Features</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-leaf-700 dark:text-leaf-400">Features</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">Bolne ki practice, har tarah se</h2>
           <p className="mt-3 text-slate-500">Padhna kaafi nahi — English bolke aati hai. KijiTalk aapko roz bolne ka mauka deta hai.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
+          {FEATURES.map(({ icon, title, desc }) => (
             <div key={title} className="card card-interactive">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
-                <Icon size={22} />
-              </div>
+              <FeatureIcon name={icon} size={60} className="mb-3" />
               <h3 className="font-semibold">{title}</h3>
               <p className="mt-1 text-sm text-slate-500">{desc}</p>
             </div>
@@ -168,7 +157,7 @@ export default function WelcomePage() {
           <div className="grid gap-6 md:grid-cols-3">
             {STEPS.map((s) => (
               <div key={s.n} className="flex gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-hero font-bold text-white">{s.n}</span>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-leaf-700 font-bold text-accent-300 ring-4 ring-leaf-100 dark:ring-leaf-950">{s.n}</span>
                 <div>
                   <h3 className="font-semibold">{s.title}</h3>
                   <p className="mt-1 text-sm text-slate-500">{s.desc}</p>
@@ -195,17 +184,10 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200/70 dark:border-slate-800">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-sm text-slate-500 sm:flex-row sm:px-8">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-hero p-1">
-              <Image src="/logo.png" alt="" width={28} height={28} className="h-full w-full object-contain" />
-            </div>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">KijiTalk</span>
-          </div>
-          <p>© {new Date().getFullYear()} KijiTalk · Made in India 🇮🇳</p>
-        </div>
-      </footer>
+      <div className="border-t border-slate-200/70 py-4 text-center text-xs text-slate-500 dark:border-slate-800">
+        © {new Date().getFullYear()} KijiTalk · Made in India 🇮🇳
+      </div>
+      <BrandFooter />
     </div>
   );
 }

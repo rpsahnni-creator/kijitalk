@@ -54,7 +54,7 @@ export default function RoleplayPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:py-10">
-        <PageHeader icon={Users} title="Roleplay · अभिनय" subtitle="Real situations — school, chai tapri, auto, interview" />
+        <PageHeader feature="roleplay" title="Roleplay · अभिनय" subtitle="Real situations — school, chai tapri, auto, interview" />
 
         {error ? (
           <ErrorState message="Scenarios load nahi ho paye." onRetry={load} />

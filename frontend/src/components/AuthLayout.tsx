@@ -69,6 +69,9 @@ export function AuthLayout({
           <p className="mb-8 mt-1 text-slate-500">{subtitle}</p>
           {children}
           <div className="mt-8 text-center text-sm text-slate-500">{footer}</div>
+          <p className="mt-10 text-center text-xs text-slate-400">
+            <span className="font-semibold text-brand-600 dark:text-brand-400">Design By:</span> Kiji Technology
+          </p>
         </div>
       </main>
     </div>

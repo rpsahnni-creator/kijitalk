@@ -179,7 +179,7 @@ export default function LessonDetailScreen() {
   if (status === 'completed') {
     return (
       <View className="flex-1 items-center justify-center bg-slate-50 px-6 dark:bg-slate-900">
-        <Ionicons name="checkmark-circle" size={64} color="#157a37" />
+        <Ionicons name="checkmark-circle" size={64} color="#006400" />
         <Text className="mb-2 mt-4 text-2xl font-bold text-slate-900 dark:text-white">Shabash! Lesson Complete 🎉</Text>
         <Text className="mb-6 text-center text-slate-500">&quot;{lesson.title}&quot; — achha kaam kiya!</Text>
         <TouchableOpacity onPress={() => router.back()} className="w-full rounded-2xl bg-brand-600 py-4">
@@ -201,7 +201,7 @@ export default function LessonDetailScreen() {
           {lesson.vocabulary.map((w) => (
             <TouchableOpacity key={w} onPress={() => speechService.speak(w)} className="flex-row items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5 dark:bg-brand-900/30">
               <Text className="text-sm text-brand-700 dark:text-brand-300">{w}</Text>
-              <Ionicons name="volume-medium" size={12} color="#741b38" />
+              <Ionicons name="volume-medium" size={12} color="#b80d30" />
             </TouchableOpacity>
           ))}
         </View>
@@ -210,7 +210,7 @@ export default function LessonDetailScreen() {
         {lesson.phrases.map((p) => (
           <TouchableOpacity key={p} onPress={() => speechService.speak(p)} className="mb-2 flex-row items-center justify-between rounded-xl bg-white p-4 dark:bg-slate-800">
             <Text className="flex-1 text-slate-900 dark:text-white">{p}</Text>
-            <Ionicons name="volume-medium" size={16} color="#952248" />
+            <Ionicons name="volume-medium" size={16} color="#dc143c" />
           </TouchableOpacity>
         ))}
 
@@ -260,7 +260,7 @@ export default function LessonDetailScreen() {
         {exercise.type === 'repeat' && (
           <>
             <TouchableOpacity onPress={() => speechService.speak(exercise.answer)} className="flex-row items-center justify-center gap-2 rounded-2xl border border-slate-200 py-3 dark:border-slate-600">
-              <Ionicons name="volume-medium" size={18} color="#952248" />
+              <Ionicons name="volume-medium" size={18} color="#dc143c" />
               <Text className="font-medium text-slate-700 dark:text-slate-200">Suno aur repeat karo</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => advance(true)} className="mt-4 rounded-2xl bg-brand-600 py-4">
@@ -272,7 +272,7 @@ export default function LessonDetailScreen() {
         {exercise.type === 'listen-type' && (
           <>
             <TouchableOpacity onPress={() => speechService.speak(exercise.answer)} className="mb-3 flex-row items-center justify-center gap-2 rounded-2xl border border-slate-200 py-3 dark:border-slate-600">
-              <Ionicons name="volume-medium" size={18} color="#952248" />
+              <Ionicons name="volume-medium" size={18} color="#dc143c" />
               <Text className="font-medium text-slate-700 dark:text-slate-200">Play Audio</Text>
             </TouchableOpacity>
             <TextInput

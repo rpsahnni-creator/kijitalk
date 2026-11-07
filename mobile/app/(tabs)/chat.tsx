@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AppHeader } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import { useTutorStore } from '@/stores/tutorStore';
 import { api, ApiError, ChatMessage, TutorEngines } from '@/lib/api';
@@ -52,8 +53,9 @@ export default function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-slate-50 dark:bg-slate-900">
-      <View className="flex-row items-center justify-between px-6 pt-14 pb-2">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <AppHeader title="Kiki Chat" />
+      <View className="flex-row items-center justify-between px-6 pt-3 pb-2">
         <Text className="text-xl font-bold text-slate-900 dark:text-white">Chat with Kiki</Text>
         {claudeAvailable && (
           <View className="flex-row rounded-full bg-slate-100 p-1 dark:bg-slate-800">
@@ -94,7 +96,7 @@ export default function ChatScreen() {
             )}
             {m.teachingTip && (
               <View className="mt-2 flex-row items-start gap-1.5 rounded-xl bg-accent-50 px-3 py-2">
-                <Ionicons name="bulb" size={14} color="#8f6e00" />
+                <Ionicons name="bulb" size={14} color="#7a7600" />
                 <Text className="flex-1 text-xs text-accent-800">{m.teachingTip}</Text>
               </View>
             )}

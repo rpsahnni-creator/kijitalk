@@ -94,8 +94,8 @@ export default function RoleplayChatPage() {
   if (!initialized || !user || !scenario) return <LoadingScreen label="Scene set ho raha hai..." />;
 
   return (
-    <AppShell>
-      <div className="mx-auto flex h-[calc(100dvh-9.5rem)] max-w-3xl flex-col px-3 py-4 sm:px-6 lg:h-screen lg:py-6">
+    <AppShell footer={false}>
+      <div className="mx-auto flex h-[calc(100dvh-8.25rem-env(safe-area-inset-bottom))] max-w-3xl flex-col px-3 py-4 sm:px-6 lg:h-[calc(100dvh-3.75rem)] lg:py-6">
         <header className="mb-4">
           <div className="flex items-center gap-2">
             <Link href="/roleplay" className="btn-ghost h-9 w-9 shrink-0 p-0" aria-label="Back to roleplays">

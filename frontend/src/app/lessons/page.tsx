@@ -131,7 +131,7 @@ export default function LessonsPage() {
     <AppShell>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:py-10">
         <PageHeader
-          icon={BookOpen}
+          feature="lessons"
           title={t('allLessons')}
           subtitle={
             lessons
