@@ -15,6 +15,7 @@ interface AuthState {
   signInWithGoogle: (idToken: string) => Promise<void>;
   signOut: () => void;
   syncProfile: () => Promise<void>;
+  updateSettings: (patch: Partial<UserProfile['settings']>) => Promise<void>;
   initAuth: () => () => void;
 }
 
@@ -84,6 +85,21 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, profile: null, token: null });
           }
           set({ initialized: true });
+        }
+      },
+
+      updateSettings: async (patch) => {
+        const { token, profile } = get();
+        if (!token || !profile) return;
+        // Optimistic: reflect the change immediately, then confirm with the server.
+        const optimistic = { ...profile, settings: { ...profile.settings, ...patch } };
+        set({ profile: optimistic, user: optimistic });
+        const { settings } = await api.patch<{ settings: UserProfile['settings'] }>('/api/settings', patch, token);
+        const current = get().profile;
+        if (current) {
+          // Local values win: they already include this patch and any newer ones made meanwhile.
+          const confirmed = { ...current, settings: { ...settings, ...current.settings } };
+          set({ profile: confirmed, user: confirmed });
         }
       },
 

@@ -29,12 +29,17 @@ router.patch('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     }
 
     const settings = asSettings(user.settings);
-    const { darkMode, notifications, dailyGoalMinutes, voiceSpeed, accent } = req.body;
-    if (darkMode !== undefined) settings.darkMode = darkMode;
-    if (notifications !== undefined) settings.notifications = notifications;
-    if (dailyGoalMinutes !== undefined) settings.dailyGoalMinutes = dailyGoalMinutes;
-    if (voiceSpeed !== undefined) settings.voiceSpeed = voiceSpeed;
-    if (accent !== undefined) settings.accent = accent;
+    const { darkMode, notifications, dailyGoalMinutes, voiceSpeed, accent, hindiLabels } = req.body ?? {};
+    if (typeof darkMode === 'boolean') settings.darkMode = darkMode;
+    if (typeof notifications === 'boolean') settings.notifications = notifications;
+    if (typeof hindiLabels === 'boolean') settings.hindiLabels = hindiLabels;
+    if (typeof dailyGoalMinutes === 'number' && Number.isFinite(dailyGoalMinutes)) {
+      settings.dailyGoalMinutes = Math.min(120, Math.max(5, Math.round(dailyGoalMinutes)));
+    }
+    if (typeof voiceSpeed === 'number' && Number.isFinite(voiceSpeed)) {
+      settings.voiceSpeed = Math.min(1.5, Math.max(0.5, Math.round(voiceSpeed * 10) / 10));
+    }
+    if (accent === 'indian' || accent === 'british' || accent === 'american') settings.accent = accent;
 
     await saveUser({ ...user, settings } as unknown as User);
     res.json({ settings });

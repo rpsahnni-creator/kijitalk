@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { Check, Crown } from 'lucide-react';
+import { Check, Crown, ShieldCheck, Sparkles } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { ErrorState } from '@/components/ui';
 import { useAuthStore } from '@/stores/useStore';
 import { api, ApiError } from '@/lib/api';
 
@@ -50,10 +51,18 @@ export default function PricingPage() {
     if (initialized && !user) router.replace('/login');
   }, [user, initialized, router]);
 
-  useEffect(() => {
+  const [loadError, setLoadError] = useState(false);
+
+  const loadStatus = useCallback(() => {
     if (!token) return;
-    api.get<SubscriptionStatus>('/api/subscription/status', token).then(setStatus).catch(console.error);
+    setLoadError(false);
+    api
+      .get<SubscriptionStatus>('/api/subscription/status', token)
+      .then(setStatus)
+      .catch(() => setLoadError(true));
   }, [token]);
+
+  useEffect(loadStatus, [loadStatus]);
 
   const upgrade = async () => {
     if (!token || !scriptReady) return;
@@ -92,6 +101,16 @@ export default function PricingPage() {
     }
   };
 
+  if (loadError) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+          <ErrorState message="Plans load nahi ho paye." onRetry={loadStatus} />
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!initialized || !user || !status) return <LoadingScreen />;
 
   const { free, premium } = status.plans;
@@ -100,14 +119,19 @@ export default function PricingPage() {
   return (
     <AppShell>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" onLoad={() => setScriptReady(true)} />
-      <div className="mx-auto max-w-3xl p-6">
-        <header className="mb-8 text-center">
-          <h1 className="text-2xl font-bold">Plans</h1>
-          <p className="text-slate-500">Jitna practice karna hai, utna milega</p>
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:py-10">
+        <header className="mb-10 text-center">
+          <span className="chip mb-3 bg-accent-100 px-3 py-1 text-accent-800 dark:bg-accent-900/40 dark:text-accent-200">
+            <Sparkles size={12} /> Plans
+          </span>
+          <h1 className="font-display text-3xl font-bold sm:text-4xl">Jitna practice, utni growth</h1>
+          <p className="mx-auto mt-2 max-w-md text-slate-500">
+            Free mein shuru karo. Jab zyada practice chahiye, Premium lo — koi hidden charges nahi.
+          </p>
         </header>
 
         {isPremium && (
-          <div className="card mb-6 flex items-center gap-3 border-brand-200 bg-brand-50 dark:bg-brand-900/20">
+          <div className="card mb-6 flex items-center gap-3 border-brand-200 bg-brand-50 dark:border-brand-900 dark:bg-brand-950/40">
             <Crown className="text-brand-600" size={24} />
             <div>
               <p className="font-semibold text-brand-700 dark:text-brand-300">Aap Premium ho!</p>
@@ -120,48 +144,70 @@ export default function PricingPage() {
           </div>
         )}
 
-        {message && <p className="mb-6 rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-800 dark:bg-accent-900/20 dark:text-accent-200">{message}</p>}
+        {message && (
+          <p className="mb-6 rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-accent-800 dark:border-accent-900/50 dark:bg-accent-900/20 dark:text-accent-200">
+            {message}
+          </p>
+        )}
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="card">
-            <h2 className="text-lg font-bold">{free.name}</h2>
-            <p className="mb-4 text-2xl font-extrabold">{free.priceLabel}</p>
-            <ul className="space-y-2">
+        <div className="grid items-stretch gap-6 md:grid-cols-2">
+          <div className="card flex flex-col p-7">
+            <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">{free.name}</p>
+            <p className="mt-2 font-display text-4xl font-bold">{free.priceLabel}</p>
+            <p className="mt-1 text-sm text-slate-500">Hamesha ke liye free</p>
+            <ul className="my-6 flex-1 space-y-3">
               {free.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <Check size={16} className="mt-0.5 shrink-0 text-brand-600" /> {f}
+                <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
+                    <Check size={12} strokeWidth={3} />
+                  </span>
+                  {f}
                 </li>
               ))}
             </ul>
+            <div className="btn-secondary pointer-events-none w-full opacity-70">{isPremium ? 'Included' : 'Current plan'}</div>
           </div>
 
-          <div className="card border-2 border-accent-400">
-            <div className="mb-1 flex items-center gap-2">
-              <h2 className="text-lg font-bold">{premium.name}</h2>
-              <span className="rounded-full bg-accent-100 px-2 py-0.5 text-xs font-semibold text-accent-800 dark:bg-accent-900/40 dark:text-accent-200">Best value</span>
+          <div className="relative flex flex-col overflow-hidden rounded-2xl gradient-hero p-7 text-white shadow-xl shadow-brand-900/25">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+            <div className="relative flex items-center justify-between">
+              <p className="text-sm font-semibold uppercase tracking-wider text-brand-100">{premium.name}</p>
+              <span className="chip bg-accent-400 font-semibold text-brand-950">Best value</span>
             </div>
-            <p className="mb-4 text-2xl font-extrabold">{premium.priceLabel}</p>
-            <ul className="mb-6 space-y-2">
+            <p className="relative mt-2 font-display text-4xl font-bold">{premium.priceLabel}</p>
+            <p className="relative mt-1 text-sm text-brand-100">Cancel kabhi bhi</p>
+            <ul className="relative my-6 flex-1 space-y-3">
               {premium.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <Check size={16} className="mt-0.5 shrink-0 text-brand-600" /> {f}
+                <li key={f} className="flex items-start gap-2.5 text-sm text-white/90">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-400 text-brand-950">
+                    <Check size={12} strokeWidth={3} />
+                  </span>
+                  {f}
                 </li>
               ))}
             </ul>
-            {!isPremium && (
+            {!isPremium ? (
               <button
+                type="button"
                 onClick={upgrade}
                 disabled={paying || !status.paymentsEnabled || !scriptReady}
-                className="btn-primary w-full"
+                className="relative inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-800 shadow-sm transition hover:bg-brand-50 disabled:opacity-60"
               >
-                {paying ? 'Processing...' : status.paymentsEnabled ? 'Upgrade karo' : 'Jald aa raha hai'}
+                <Crown size={16} />
+                {paying ? 'Processing…' : status.paymentsEnabled ? 'Upgrade karo' : 'Jald aa raha hai'}
               </button>
+            ) : (
+              <div className="relative rounded-xl bg-white/15 px-5 py-3 text-center text-sm font-semibold">Active ✓</div>
             )}
-            {!status.paymentsEnabled && (
-              <p className="mt-2 text-center text-xs text-slate-400">Payments abhi setup ho rahe hain</p>
+            {!status.paymentsEnabled && !isPremium && (
+              <p className="relative mt-2 text-center text-xs text-brand-100">Payments abhi setup ho rahe hain</p>
             )}
           </div>
         </div>
+
+        <p className="mt-8 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+          <ShieldCheck size={14} /> Secure payments via Razorpay · UPI, cards, netbanking
+        </p>
       </div>
     </AppShell>
   );

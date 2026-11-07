@@ -1,29 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useStore';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { AuthLayout, FormError, OrDivider } from '@/components/AuthLayout';
 import { isGoogleSignInConfigured } from '@/lib/google';
 import { getAuthErrorMessage } from '@/lib/authErrors';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, signInWithGoogle, loading } = useAuthStore();
+  const { user, initialized, signIn, signInWithGoogle, loading } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    if (initialized && user) router.replace('/dashboard');
+  }, [initialized, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      await signIn(email, password);
+      await signIn(email.trim(), password);
       router.push('/dashboard');
-    } catch {
-      setError('Invalid email or password');
+    } catch (err) {
+      setError(getAuthErrorMessage(err, 'Invalid email or password'));
     }
   };
 
@@ -38,63 +44,68 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 dark:bg-slate-900">
-      <div className="card w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero p-2">
-            <Image src="/logo.png" alt="KijiTalk" width={56} height={56} className="h-full w-full object-contain" />
-          </div>
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-slate-500">Sign in to continue learning</p>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in karke practice continue karo"
+      footer={
+        <>
+          Account nahi hai?{' '}
+          <Link href="/signup" className="font-semibold text-brand-600 hover:underline dark:text-brand-300">
+            Free sign up
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="email" className="label">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input-field"
+            placeholder="you@example.com"
+            required
+          />
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium">Email</label>
+        <div>
+          <label htmlFor="password" className="label">Password</label>
+          <div className="relative">
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-field"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Password</label>
-            <input
-              type="password"
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="input-field"
+              className="input-field pr-11"
               placeholder="••••••••"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-slate-600"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+        </div>
+        <FormError message={error} />
+        <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+          {loading && <Loader2 size={16} className="animate-spin" />}
+          {loading ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
 
-        {isGoogleSignInConfigured() && (
-          <>
-            <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-              <span className="text-sm text-slate-400">or</span>
-              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-            </div>
-            <GoogleSignInButton onCredential={handleGoogleCredential} />
-          </>
-        )}
-
-        <p className="mt-6 text-center text-sm text-slate-500">
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" className="font-semibold text-brand-600">
-            Sign up
-          </Link>
-        </p>
-      </div>
-    </div>
+      {isGoogleSignInConfigured() && (
+        <>
+          <OrDivider />
+          <GoogleSignInButton onCredential={handleGoogleCredential} />
+        </>
+      )}
+    </AuthLayout>
   );
 }
