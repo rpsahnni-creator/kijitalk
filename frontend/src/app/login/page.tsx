@@ -22,6 +22,13 @@ export default function LoginPage() {
     if (initialized && user) router.replace('/dashboard');
   }, [initialized, user, router]);
 
+  // Sent here because an admin suspended the account mid-session.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('suspended') === '1') {
+      setError('Aapka account suspend kar diya gaya hai. Madad ke liye support se baat karo.');
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');

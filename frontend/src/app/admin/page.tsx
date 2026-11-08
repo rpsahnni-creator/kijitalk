@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, Search, Shield } from 'lucide-react';
+import { ChevronRight, Loader2, Plus, Search, Shield } from 'lucide-react';
+import { StudentDetail, auditActionLabel } from '@/components/admin/StudentDetail';
 import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorState, PageHeader } from '@/components/ui';
 import { useAuthStore } from '@/stores/useStore';
 import { api, ApiError } from '@/lib/api';
 
-type Tab = 'overview' | 'users' | 'lessons' | 'schools' | 'revenue' | 'ai';
+type Tab = 'overview' | 'users' | 'lessons' | 'schools' | 'revenue' | 'ai' | 'audit';
 
 interface Overview {
   users: { total: number; new7d: number; active7d: number; active1d: number; premium: number };
@@ -60,27 +61,77 @@ interface AdminUser {
   lessonsCompleted: number;
   createdAt: string;
   lastActiveAt: string;
+  subscriptionExpiresAt: string | null;
+  schoolLicenseUntil: string | null;
+  premiumGrantUntil: string | null;
+  suspendedAt: string | null;
+}
+
+const USER_FILTERS: Array<[string, string]> = [
+  ['', 'Sab'],
+  ['premium', 'Premium'],
+  ['free', 'Free'],
+  ['suspended', 'Suspended'],
+  ['inactive', '14 din se inactive'],
+];
+
+function isPremium(u: AdminUser) {
+  const now = Date.now();
+  const future = (iso: string | null) => !!iso && new Date(iso).getTime() > now;
+  return (u.subscriptionTier === 'premium' && future(u.subscriptionExpiresAt)) || future(u.schoolLicenseUntil) || future(u.premiumGrantUntil);
 }
 
 function UsersTab({ token }: { token: string }) {
   const [q, setQ] = useState('');
+  const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<{ total: number; pageSize: number; users: AdminUser[] } | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => {
       void api
         .get<{ total: number; pageSize: number; users: AdminUser[] }>(
-          `/api/admin/users?q=${encodeURIComponent(q)}&page=${page}`,
+          `/api/admin/users?q=${encodeURIComponent(q)}&filter=${filter}&page=${page}`,
           token
         )
         .then(setData);
     }, 250);
     return () => clearTimeout(t);
-  }, [q, page, token]);
+  }, [q, filter, page, token, reload]);
+
+  if (openId) {
+    return (
+      <StudentDetail
+        token={token}
+        id={openId}
+        onBack={() => {
+          setOpenId(null);
+          setReload((n) => n + 1);
+        }}
+      />
+    );
+  }
 
   return (
     <div>
+      <div className="no-scrollbar mb-3 flex gap-2 overflow-x-auto">
+        {USER_FILTERS.map(([id, label]) => (
+          <button
+            key={id || 'all'}
+            type="button"
+            onClick={() => {
+              setFilter(id);
+              setPage(1);
+            }}
+            aria-pressed={filter === id}
+            className={`pill-tab shrink-0 ${filter === id ? 'pill-tab-active' : 'pill-tab-idle'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
         <input
@@ -97,35 +148,42 @@ function UsersTab({ token }: { token: string }) {
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-800/60">
             <tr>
-              {['Learner', 'Class / State', 'Plan', 'Streak', 'Lessons', 'Joined', 'Last active'].map((h) => (
+              {['Learner', 'Class / State', 'Plan', 'Streak', 'Lessons', 'Joined', 'Last active', ''].map((h) => (
                 <th key={h} className="px-4 py-2 font-semibold">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {data?.users.map((u) => (
-              <tr key={u.id}>
+              <tr key={u.id} onClick={() => setOpenId(u.id)} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
                 <td className="px-4 py-2">
-                  <p className="font-medium">{u.displayName}</p>
-                  <p className="text-xs text-slate-500">{u.email}</p>
+                  <button type="button" onClick={() => setOpenId(u.id)} className="text-left">
+                    <span className="block font-medium">
+                      {u.displayName}
+                      {u.suspendedAt && <span className="chip ml-2 bg-red-100 text-red-800">Suspended</span>}
+                    </span>
+                    <span className="block text-xs text-slate-500">{u.email}</span>
+                  </button>
                 </td>
                 <td className="px-4 py-2 text-slate-600 dark:text-slate-300">
                   {u.grade ?? '—'} · {u.state ?? '—'}
                 </td>
                 <td className="px-4 py-2">
-                  <span className={`chip ${u.subscriptionTier === 'premium' ? 'bg-accent-200 text-slate-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                    {u.subscriptionTier}
+                  <span className={`chip ${isPremium(u) ? 'bg-accent-200 text-slate-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                    {isPremium(u) ? 'premium' : 'free'}
                   </span>
                 </td>
                 <td className="px-4 py-2">{u.streak}🔥</td>
                 <td className="px-4 py-2">{u.lessonsCompleted}</td>
                 <td className="px-4 py-2 text-slate-500">{date(u.createdAt)}</td>
                 <td className="px-4 py-2 text-slate-500">{date(u.lastActiveAt)}</td>
+                <td className="px-2 py-2 text-slate-400"><ChevronRight size={16} /></td>
               </tr>
             ))}
           </tbody>
         </table>
         {!data && <Loader2 className="mx-auto my-6 animate-spin text-brand-600" />}
+        {data?.users.length === 0 && <p className="px-4 py-6 text-center text-sm text-slate-500">Koi learner nahi mila.</p>}
       </div>
       {data && data.total > data.pageSize && (
         <div className="mt-3 flex items-center justify-between text-sm">
@@ -549,6 +607,81 @@ function SchoolRow({ school, onSave }: { school: AdminSchool; onSave: (id: strin
   );
 }
 
+interface AuditRow {
+  id: string;
+  adminEmail: string;
+  action: string;
+  targetEmail: string | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+function AuditTab({ token }: { token: string }) {
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<{ total: number; pageSize: number; entries: AuditRow[] } | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      void api
+        .get<{ total: number; pageSize: number; entries: AuditRow[] }>(`/api/admin/audit?q=${encodeURIComponent(q)}&page=${page}`, token)
+        .then(setData);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q, page, token]);
+  return (
+    <div>
+      <p className="mb-3 text-sm text-slate-500">
+        Har admin action yahan record hota hai: kisne, kab, kis learner pe, aur kyun. Panel se yeh entries badli ya mitayi nahi ja sakti.
+      </p>
+      <div className="relative mb-4">
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+        <input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Learner, admin ya action se dhundho"
+          className="input-field pl-9"
+        />
+      </div>
+      <div className="card overflow-x-auto p-0">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-800/60">
+            <tr>
+              {['Kab', 'Admin', 'Action', 'Learner', 'Wajah'].map((h) => (
+                <th key={h} className="px-4 py-2 font-semibold">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {data?.entries.map((e) => (
+              <tr key={e.id}>
+                <td className="whitespace-nowrap px-4 py-2 text-slate-500">
+                  {new Date(e.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </td>
+                <td className="px-4 py-2">{e.adminEmail}</td>
+                <td className="px-4 py-2 font-medium">{auditActionLabel(e.action)}</td>
+                <td className="px-4 py-2">{e.targetEmail ?? '—'}</td>
+                <td className="px-4 py-2 text-slate-600 dark:text-slate-300">{e.reason ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!data && <Loader2 className="mx-auto my-6 animate-spin text-brand-600" />}
+        {data?.entries.length === 0 && <p className="px-4 py-6 text-center text-sm text-slate-500">Abhi koi admin action nahi hua.</p>}
+      </div>
+      {data && data.total > data.pageSize && (
+        <div className="mt-3 flex items-center justify-between text-sm">
+          <button type="button" className="btn-secondary py-1.5" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Pichla</button>
+          <span className="text-slate-500">Page {page} / {Math.ceil(data.total / data.pageSize)}</span>
+          <button type="button" className="btn-secondary py-1.5" disabled={page * data.pageSize >= data.total} onClick={() => setPage((p) => p + 1)}>Agla</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const TABS: Array<[Tab, string]> = [
   ['overview', 'Overview'],
   ['users', 'Users'],
@@ -556,6 +689,7 @@ const TABS: Array<[Tab, string]> = [
   ['schools', 'Schools'],
   ['revenue', 'Revenue'],
   ['ai', 'AI'],
+  ['audit', 'Audit log'],
 ];
 
 export default function AdminPage() {
@@ -599,6 +733,7 @@ export default function AdminPage() {
             {token && tab === 'schools' && <SchoolsTab token={token} />}
             {token && tab === 'revenue' && <RevenueTab token={token} />}
             {token && tab === 'ai' && <AiTab token={token} />}
+            {token && tab === 'audit' && <AuditTab token={token} />}
           </>
         )}
       </div>

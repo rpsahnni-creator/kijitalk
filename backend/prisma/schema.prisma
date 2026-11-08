@@ -42,6 +42,7 @@ enum PaymentStatus {
   created
   paid
   failed
+  refunded
 }
 
 // Mirrors Razorpay subscription states.
@@ -109,6 +110,15 @@ model User {
   // usage checks stay synchronous. Refreshed when the learner joins a class
   // or the school's licence changes.
   schoolLicenseUntil DateTime?
+
+  // Set by an admin from the admin panel.
+  // Complimentary Premium (support goodwill, partners, testers) — separate
+  // from paid subscriptions so billing syncs never overwrite it.
+  premiumGrantUntil DateTime?
+  // Suspended learners are refused on every API call (the login is also
+  // disabled in auth-service). Null = active.
+  suspendedAt       DateTime?
+  suspendedReason   String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -241,6 +251,10 @@ model Payment {
   amountInr              Int
   status                 PaymentStatus @default(created)
   invoice                Invoice?
+  // Refunds issued from the admin panel (amount in paise; partial allowed).
+  razorpayRefundId       String?
+  refundedPaise          Int           @default(0)
+  refundedAt             DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -407,4 +421,20 @@ model Assignment {
 
   @@index([classroomId])
   @@map("assignments")
+}
+
+// Every action an admin takes on a learner's account: who, what, why, when.
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  adminEmail   String
+  action       String
+  targetUserId String?
+  targetEmail  String?
+  reason       String?
+  details      Json?
+  createdAt    DateTime @default(now())
+
+  @@index([targetUserId, createdAt])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
 }

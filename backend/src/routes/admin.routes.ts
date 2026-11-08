@@ -9,9 +9,11 @@ import { prisma } from '../config/prisma';
 import { PLANS } from '../config/plans';
 import { logger } from '../utils/logger';
 import { refreshSchoolLicenses, seatsUsed } from '../services/school.service';
+import adminUsersRoutes from './adminUsers.routes';
 
 const router = Router();
 router.use(authMiddleware, requireAdmin);
+router.use(adminUsersRoutes); // /users/:id, /users/:id/actions, /audit
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -34,10 +36,19 @@ router.get('/overview', async (_req: AuthRequest, res: Response) => {
       prisma.user.count({ where: { ...live, createdAt: { gte: new Date(now - 7 * DAY) } } }),
       prisma.user.count({ where: { ...live, lastActiveAt: { gte: new Date(now - 7 * DAY) } } }),
       prisma.user.count({ where: { ...live, lastActiveAt: { gte: new Date(now - DAY) } } }),
-      prisma.user.count({ where: { ...live, subscriptionTier: 'premium', subscriptionExpiresAt: { gt: new Date() } } }),
+      prisma.user.count({
+        where: {
+          ...live,
+          OR: [
+            { subscriptionTier: 'premium', subscriptionExpiresAt: { gt: new Date() } },
+            { schoolLicenseUntil: { gt: new Date() } },
+            { premiumGrantUntil: { gt: new Date() } },
+          ],
+        },
+      }),
       prisma.subscription.count({ where: { status: { in: ['active', 'authenticated', 'pending'] }, cancelAtPeriodEnd: false } }),
-      prisma.payment.aggregate({ where: { status: 'paid', createdAt: { gte: monthStart } }, _sum: { amountInr: true } }),
-      prisma.payment.aggregate({ where: { status: 'paid' }, _sum: { amountInr: true } }),
+      prisma.payment.aggregate({ where: { status: { in: ['paid', 'refunded'] }, createdAt: { gte: monthStart } }, _sum: { amountInr: true, refundedPaise: true } }),
+      prisma.payment.aggregate({ where: { status: { in: ['paid', 'refunded'] } }, _sum: { amountInr: true, refundedPaise: true } }),
     ]);
 
     res.json({
@@ -45,8 +56,9 @@ router.get('/overview', async (_req: AuthRequest, res: Response) => {
       revenue: {
         mrrInr: liveSubs * PLANS.premium.priceInr,
         activeSubscriptions: liveSubs,
-        thisMonthInr: revenueMonth._sum.amountInr ?? 0,
-        allTimeInr: revenueAll._sum.amountInr ?? 0,
+        // Net of refunds.
+        thisMonthInr: (revenueMonth._sum.amountInr ?? 0) - Math.round((revenueMonth._sum.refundedPaise ?? 0) / 100),
+        allTimeInr: (revenueAll._sum.amountInr ?? 0) - Math.round((revenueAll._sum.refundedPaise ?? 0) / 100),
       },
       conversionPercent: total ? Math.round((premium / total) * 1000) / 10 : 0,
     });
@@ -59,13 +71,29 @@ router.get('/overview', async (_req: AuthRequest, res: Response) => {
 // GET /api/admin/users?q=&page= — searchable learner list.
 router.get('/users', async (req: AuthRequest, res: Response) => {
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const filter = typeof req.query.filter === 'string' ? req.query.filter : '';
   const page = Math.max(1, Number(req.query.page) || 1);
   const pageSize = 25;
+  const now = new Date();
+  const premium: Prisma.UserWhereInput = {
+    OR: [
+      { subscriptionTier: 'premium', subscriptionExpiresAt: { gt: now } },
+      { schoolLicenseUntil: { gt: now } },
+      { premiumGrantUntil: { gt: now } },
+    ],
+  };
+  const FILTERS: Record<string, Prisma.UserWhereInput> = {
+    suspended: { suspendedAt: { not: null } },
+    premium,
+    free: { NOT: premium },
+    inactive: { lastActiveAt: { lt: new Date(now.getTime() - 14 * DAY) } },
+  };
   const where: Prisma.UserWhereInput = {
     deletedAt: null,
-    ...(q
-      ? { OR: [{ email: { contains: q, mode: 'insensitive' } }, { displayName: { contains: q, mode: 'insensitive' } }] }
-      : {}),
+    AND: [
+      q ? { OR: [{ email: { contains: q, mode: 'insensitive' } }, { displayName: { contains: q, mode: 'insensitive' } }] } : {},
+      FILTERS[filter] ?? {},
+    ],
   };
   const [total, users] = await Promise.all([
     prisma.user.count({ where }),
@@ -87,6 +115,9 @@ router.get('/users', async (req: AuthRequest, res: Response) => {
         lessonsCompleted: true,
         createdAt: true,
         lastActiveAt: true,
+        schoolLicenseUntil: true,
+        premiumGrantUntil: true,
+        suspendedAt: true,
       },
     }),
   ]);

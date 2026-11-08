@@ -75,3 +75,9 @@ export function verifySubscriptionSignature(paymentId: string, subscriptionId: s
     .digest('hex');
   return safeEqual(expected, signature);
 }
+
+/** Refunds a captured payment, fully or partly (amount in paise). */
+export async function refundRazorpayPayment(paymentId: string, amountPaise: number, notes: Record<string, string>) {
+  if (!razorpay) throw new Error('Razorpay is not configured');
+  return razorpay.payments.refund(paymentId, { amount: amountPaise, speed: 'normal', notes });
+}

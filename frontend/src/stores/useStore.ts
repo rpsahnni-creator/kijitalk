@@ -7,6 +7,7 @@ import {
   ApiError,
   authRequest,
   setAccessTokenRefresher,
+  setSuspendedHandler,
   type AuthAccount,
   type AuthSession,
   type UserProfile,
@@ -241,6 +242,12 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     initAuth: () => {
       setAccessTokenRefresher(() => get().refreshSession());
+      setSuspendedHandler(() => {
+        void get().signOut();
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.assign('/login?suspended=1');
+        }
+      });
       try {
         // Tokens used to be stored here; they no longer are.
         localStorage.removeItem('kijitalk-auth');
@@ -252,7 +259,10 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         if (access) await get().syncProfile();
         set({ initialized: true });
       })();
-      return () => setAccessTokenRefresher(null);
+      return () => {
+        setAccessTokenRefresher(null);
+        setSuspendedHandler(null);
+      };
     },
   };
 });

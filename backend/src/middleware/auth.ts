@@ -15,13 +15,23 @@ export interface AuthRequest extends Request {
 
 // Login accounts live in auth-service; learner profiles live here and are
 // matched by email. Cache the lookup so every request doesn't hit the table.
+// Entries expire after a minute so a suspension made on another API instance
+// takes effect quickly everywhere.
 const PROFILE_CACHE_LIMIT = 5000;
-const profileIdByEmail = new Map<string, string>();
-
-/** Forget a cached profile id, e.g. after the account is deleted. */
-export function evictProfile(email: string): void {
-  profileIdByEmail.delete(email.toLowerCase());
+const PROFILE_CACHE_TTL_MS = 60_000;
+interface CachedProfile {
+  id: string;
+  suspended: boolean;
+  at: number;
 }
+const profileByEmail = new Map<string, CachedProfile>();
+
+/** Forget a cached profile, e.g. after the account is deleted or suspended. */
+export function evictProfile(email: string): void {
+  profileByEmail.delete(email.toLowerCase());
+}
+
+export const SUSPENDED_MESSAGE = 'Aapka account suspend kar diya gaya hai. Madad ke liye support se baat karo.';
 
 // Until a learner has accepted the Terms and (if under 18) a parent has
 // consented, only these routes work: reading the profile (to show the gate),
@@ -42,24 +52,25 @@ const GATE_MESSAGES: Record<string, string> = {
   parent_denied: 'Parent ne permission nahi di, isliye yeh feature band hai.',
 };
 
-async function resolveProfileId(email: string, name: string): Promise<string> {
-  const cached = profileIdByEmail.get(email);
-  if (cached) return cached;
+async function resolveProfile(email: string, name: string): Promise<CachedProfile> {
+  const cached = profileByEmail.get(email);
+  if (cached && Date.now() - cached.at < PROFILE_CACHE_TTL_MS) return cached;
 
   // First request from a new account creates its learner profile.
   const profile = await prisma.user.upsert({
     where: { email },
     update: {},
     create: { email, displayName: name },
-    select: { id: true },
+    select: { id: true, suspendedAt: true },
   });
 
-  if (profileIdByEmail.size >= PROFILE_CACHE_LIMIT) {
-    const oldest = profileIdByEmail.keys().next().value;
-    if (oldest) profileIdByEmail.delete(oldest);
+  if (profileByEmail.size >= PROFILE_CACHE_LIMIT) {
+    const oldest = profileByEmail.keys().next().value;
+    if (oldest) profileByEmail.delete(oldest);
   }
-  profileIdByEmail.set(email, profile.id);
-  return profile.id;
+  const entry = { id: profile.id, suspended: profile.suspendedAt !== null, at: Date.now() };
+  profileByEmail.set(email, entry);
+  return entry;
 }
 
 export async function authMiddleware(
@@ -89,8 +100,12 @@ export async function authMiddleware(
   }
 
   try {
-    const uid = await resolveProfileId(claims.email, claims.name);
-    req.user = { uid, email: claims.email, emailVerified: claims.emailVerified, gate: claims.gate };
+    const profile = await resolveProfile(claims.email, claims.name);
+    if (profile.suspended) {
+      res.status(403).json({ error: SUSPENDED_MESSAGE, suspended: true });
+      return;
+    }
+    req.user = { uid: profile.id, email: claims.email, emailVerified: claims.emailVerified, gate: claims.gate };
     next();
   } catch (error) {
     logger.error('authMiddleware: could not load learner profile', error);
@@ -114,9 +129,12 @@ export function optionalAuth(
     next();
     return;
   }
-  resolveProfileId(claims.email, claims.name)
-    .then((uid) => {
-      req.user = { uid, email: claims.email, emailVerified: claims.emailVerified, gate: claims.gate };
+  resolveProfile(claims.email, claims.name)
+    .then((profile) => {
+      // A suspended learner browses public routes as anonymous.
+      if (!profile.suspended) {
+        req.user = { uid: profile.id, email: claims.email, emailVerified: claims.emailVerified, gate: claims.gate };
+      }
       next();
     })
     .catch((error) => {

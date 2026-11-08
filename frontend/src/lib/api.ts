@@ -31,8 +31,16 @@ export function setAccessTokenRefresher(fn: (() => Promise<string | null>) | nul
   accessTokenRefresher = fn;
 }
 
+// The auth store registers this: an admin suspended the account, so the
+// session is dropped and the learner is sent to the login page.
+let suspendedHandler: (() => void) | null = null;
+export function setSuspendedHandler(fn: (() => void) | null) {
+  suspendedHandler = fn;
+}
+
 async function toApiError(res: Response): Promise<ApiError> {
   const body = await res.json().catch(() => ({ error: res.statusText }));
+  if (res.status === 403 && body.suspended === true) suspendedHandler?.();
   return new ApiError(res.status, body.error ?? 'Request failed', body.limitReached === true, body.usage, body.fields);
 }
 

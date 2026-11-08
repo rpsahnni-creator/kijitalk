@@ -49,6 +49,7 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 INVALID_LOGIN = "Email ya password galat hai."
+SUSPENDED_LOGIN = "Aapka account suspend kar diya gaya hai. Madad ke liye support se baat karo."
 
 
 def _signed_in(request, user, status_code=status.HTTP_200_OK) -> Response:
@@ -169,6 +170,10 @@ class LoginView(PublicView):
             if user is None:
                 return _error(INVALID_LOGIN, status.HTTP_401_UNAUTHORIZED)
         elif not user.is_active:
+            # Only say "suspended" to someone who knows the password, so the
+            # message can't be used to probe which emails have accounts.
+            if user.check_password(password):
+                return _error(SUSPENDED_LOGIN, status.HTTP_403_FORBIDDEN)
             return _error(INVALID_LOGIN, status.HTTP_401_UNAUTHORIZED)
         elif not user.check_password(password) and not self._claim_with_legacy_password(user, password):
             return _error(INVALID_LOGIN, status.HTTP_401_UNAUTHORIZED)
@@ -243,7 +248,7 @@ class GoogleLoginView(PublicView):
                 )
         else:
             if not user.is_active:
-                return _error(INVALID_LOGIN, status.HTTP_401_UNAUTHORIZED)
+                return _error(SUSPENDED_LOGIN, status.HTTP_403_FORBIDDEN)
             # Google has confirmed the address, so it is verified and linked.
             user.google_sub = user.google_sub or claims["sub"]
             user.email_verified = True

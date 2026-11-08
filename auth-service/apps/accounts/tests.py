@@ -436,3 +436,75 @@ class InternalInviteTests(AuthTestCase):
             "/internal/accounts/invite/", {"email": "student@example.com"}, format="json", HTTP_X_INTERNAL_KEY="k" * 40
         )
         self.assertEqual(again.data, {"created": False})
+
+
+@override_settings(INTERNAL_API_KEY="k" * 40, REFRESH_REUSE_GRACE_SECONDS=0)
+class InternalAdminActionTests(AuthTestCase):
+    def admin(self, action, email="asha@example.com", key="k" * 40):
+        return self.client.post(
+            "/internal/accounts/admin/", {"email": email, "action": action}, format="json", HTTP_X_INTERNAL_KEY=key
+        )
+
+    def refresh_with(self, token):
+        return APIClient().post("/api/auth/token/refresh/", {"refresh": token}, format="json", **MOBILE)
+
+    def test_requires_the_key_and_a_known_action(self):
+        self.register()
+        self.assertEqual(self.admin("suspend", key="x" * 40).status_code, 403)
+        self.assertTrue(User.objects.get(email="asha@example.com").is_active)
+        self.assertEqual(self.admin("make_admin").status_code, 400)
+
+    def test_status_shows_support_details_without_secrets(self):
+        self.register(minor=True, parent="papa@example.com")
+        res = self.admin("status")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["gate"], "parent_pending")
+        self.assertEqual(res.data["parentEmail"], "papa@example.com")
+        self.assertTrue(res.data["hasPassword"])
+        self.assertNotIn("password", res.data)
+        self.assertEqual(self.admin("status", email="nobody@example.com").data, {"exists": False})
+
+    def test_suspend_signs_out_everywhere_and_blocks_login(self):
+        refresh = self.register(**MOBILE).data["refresh"]
+        res = self.admin("suspend")
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.data["active"])
+        self.assertEqual(self.refresh_with(refresh).status_code, 401)
+
+        blocked = self.login()
+        self.assertEqual(blocked.status_code, 403)
+        self.assertIn("suspend", blocked.data["error"])
+        # A wrong password still gets the generic message (no account probing).
+        self.assertEqual(self.login(password="wrong-password-1").status_code, 401)
+
+        self.assertTrue(self.admin("unsuspend").data["active"])
+        self.assertEqual(self.login().status_code, 200)
+
+    def test_logout_all_revokes_refresh_tokens(self):
+        refresh = self.register(**MOBILE).data["refresh"]
+        self.assertEqual(self.admin("logout_all").status_code, 200)
+        self.assertEqual(self.refresh_with(refresh).status_code, 401)
+        self.assertEqual(self.login().status_code, 200)  # can sign in again
+
+    def test_support_emails_and_verification(self):
+        self.register()
+        mail.outbox.clear()
+        self.assertEqual(self.admin("send_password_reset").status_code, 200)
+        self.assertIn("/reset-password?uid=", mail.outbox[-1].body)
+
+        self.assertEqual(self.admin("resend_verification").status_code, 200)
+        self.assertTrue(self.admin("mark_verified").data["emailVerified"])
+        self.assertEqual(self.admin("resend_verification").status_code, 409)
+        self.assertEqual(self.admin("resend_parent_consent").status_code, 409)  # adult
+
+    def test_resend_parent_consent_for_pending_minor(self):
+        self.register(minor=True, parent="papa@example.com")
+        mail.outbox.clear()
+        self.assertEqual(self.admin("resend_parent_consent").status_code, 200)
+        self.assertEqual(mail.outbox[-1].to, ["papa@example.com"])
+
+    def test_delete_removes_the_login(self):
+        self.register()
+        self.assertEqual(self.admin("delete").data, {"deleted": True})
+        self.assertFalse(User.objects.filter(email="asha@example.com").exists())
+        self.assertEqual(self.admin("delete").data, {"deleted": False, "exists": False})
