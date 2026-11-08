@@ -22,7 +22,12 @@ interface AuthState {
   loading: boolean;
   initialized: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string,
+    age: { isMinor: boolean; parentEmail?: string }
+  ) => Promise<void>;
   signInWithGoogle: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<string | null>;
@@ -30,6 +35,10 @@ interface AuthState {
   updateSettings: (patch: Partial<UserProfile['settings']>) => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<string>;
   resendVerification: () => Promise<string>;
+  completeSetup: (input: { isMinor: boolean; parentEmail?: string }) => Promise<void>;
+  resendParentConsent: (parentEmail?: string) => Promise<string>;
+  exportMyData: () => Promise<Blob>;
+  deleteAccount: (password: string) => Promise<string>;
   initAuth: () => () => void;
 }
 
@@ -82,8 +91,15 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     signIn: (email, password) => signInWith('/api/auth/login/', { email, password }),
 
-    signUp: (email, password, displayName) =>
-      signInWith('/api/auth/register/', { email, password, display_name: displayName }),
+    signUp: (email, password, displayName, age) =>
+      signInWith('/api/auth/register/', {
+        email,
+        password,
+        display_name: displayName,
+        accept_terms: true,
+        is_minor: age.isMinor,
+        parent_email: age.parentEmail ?? '',
+      }),
 
     signInWithGoogle: (idToken) => signInWith('/api/auth/google/', { id_token: idToken }),
 
@@ -166,6 +182,47 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     resendVerification: async () => {
       const { message } = await authRequest<{ message: string }>('/api/auth/email/resend/', {}, get().token);
+      return message;
+    },
+
+    completeSetup: async ({ isMinor, parentEmail }) => {
+      applySession(
+        await authRequest<AuthSession>(
+          '/api/auth/account/setup/',
+          { accept_terms: true, is_minor: isMinor, parent_email: parentEmail ?? '' },
+          get().token
+        )
+      );
+      await get().syncProfile();
+    },
+
+    resendParentConsent: async (parentEmail) => {
+      const res = await authRequest<AuthSession & { message: string }>(
+        '/api/auth/parent-consent/resend/',
+        parentEmail ? { parent_email: parentEmail } : {},
+        get().token
+      );
+      if (res.access) applySession(res);
+      return res.message;
+    },
+
+    exportMyData: async () => {
+      const token = get().token;
+      const [account, learning] = await Promise.all([
+        authRequest<{ account: unknown }>('/api/auth/account/export/', undefined, token),
+        api.get<Record<string, unknown>>('/api/account/export', token),
+      ]);
+      const file = { service: 'KijiTalk', ...learning, account: account.account };
+      return new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
+    },
+
+    deleteAccount: async (password) => {
+      const { message } = await authRequest<{ message: string }>(
+        '/api/auth/account/delete/',
+        { password, confirm: 'DELETE' },
+        get().token
+      );
+      clearSession();
       return message;
     },
 

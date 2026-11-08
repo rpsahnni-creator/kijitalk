@@ -92,6 +92,13 @@ export interface AuthAccount {
   displayName: string;
   emailVerified: boolean;
   hasPassword: boolean;
+  /** "ok", or what still blocks the learner: "setup" | "parent_pending" | "parent_denied". */
+  gate: 'ok' | 'setup' | 'parent_pending' | 'parent_denied';
+  termsAccepted: boolean;
+  isMinor: boolean;
+  parentalConsent: 'not_required' | 'pending' | 'granted' | 'denied';
+  /** Masked, e.g. "pa****@example.com". */
+  parentEmail: string;
 }
 
 export interface AuthSession {

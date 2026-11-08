@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, Moon, Sun, X } from 'lucide-react';
 import { FeatureIcon } from './FeatureIcon';
+import { AccountGate } from './AccountGate';
 import { useAuthStore, useSettingsStore } from '@/stores/useStore';
 import { MOBILE_TABS, NAV_SECTIONS, featureLabel } from '@/lib/features';
 
@@ -18,9 +19,16 @@ export function BrandFooter({ className = '' }: { className?: string }) {
     <footer className={`relative overflow-hidden bg-gradient-to-r from-brand-800 via-brand-700 to-brand-600 ${className}`}>
       <span className="pointer-events-none absolute -bottom-8 -right-6 h-20 w-20 rounded-full bg-accent-400/90" />
       <span className="pointer-events-none absolute -left-4 -top-6 h-12 w-12 rounded-full bg-leaf-700" />
-      <p className="relative px-4 py-3.5 text-center text-sm text-white">
-        <span className="font-semibold text-accent-300">Design By:</span> Kiji Technology
-      </p>
+      <div className="relative flex flex-col items-center gap-1 px-4 py-3.5 text-sm text-white">
+        <p>
+          <span className="font-semibold text-accent-300">Design By:</span> Kiji Technology
+        </p>
+        <p className="text-xs text-white/80">
+          <Link href="/privacy" className="hover:text-accent-300 hover:underline">Privacy Policy</Link>
+          <span className="mx-2">·</span>
+          <Link href="/terms" className="hover:text-accent-300 hover:underline">Terms</Link>
+        </p>
+      </div>
     </footer>
   );
 }
@@ -167,7 +175,10 @@ export function AppShell({
           </Link>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          {/* Settings stays reachable so a blocked learner can still download or delete their data. */}
+          {isActive(pathname, '/settings') ? children : <AccountGate>{children}</AccountGate>}
+        </main>
 
         {footer && <BrandFooter />}
       </div>

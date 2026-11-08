@@ -134,7 +134,7 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
     });
 
     recordUserActivity(user, 1);
-    recordAiUsage(user);
+    if (aiResponse.engineUsed !== 'offline') recordAiUsage(user); // no quota for canned replies
     const rewards = awardActivity(user, 'chat', aiResponse.corrections.length === 0 ? 100 : 70);
     await saveUser(user);
 

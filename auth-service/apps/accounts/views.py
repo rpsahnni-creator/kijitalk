@@ -1,5 +1,7 @@
 import logging
 
+import requests
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import update_last_login
@@ -8,6 +10,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core import signing
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import status
@@ -19,7 +22,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from . import emails, legacy
 from .serializers import (
+    AccountSetupSerializer,
     ChangePasswordSerializer,
+    DeleteAccountSerializer,
+    ParentDecisionSerializer,
+    ParentResendSerializer,
     ForgotPasswordSerializer,
     GoogleSerializer,
     LoginSerializer,
@@ -50,6 +57,44 @@ def _signed_in(request, user, status_code=status.HTTP_200_OK) -> Response:
     response = Response(token_payload(request, user, refresh), status=status_code)
     set_refresh_cookie(response, refresh)
     return response
+
+
+def _session_response(request, user, extra: dict | None = None) -> Response:
+    """A fresh session (new claims) without counting it as a sign-in."""
+    refresh = issue_tokens(user)
+    payload = token_payload(request, user, refresh)
+    payload.update(extra or {})
+    response = Response(payload)
+    set_refresh_cookie(response, refresh)
+    return response
+
+
+def _apply_terms(user) -> None:
+    user.terms_accepted_at = timezone.now()
+    user.terms_version = settings.TERMS_VERSION
+
+
+def _apply_age(user, is_minor: bool, parent_email: str = "") -> bool:
+    """Records the learner's age group. Returns True when a parent must be asked."""
+    user.age_confirmed = True
+    user.is_minor = bool(is_minor)
+    if user.is_minor:
+        changed = parent_email != user.parent_email or user.parental_consent != User.CONSENT_GRANTED
+        if changed:
+            user.parent_email = parent_email
+            user.parental_consent = User.CONSENT_PENDING
+            user.parental_consent_at = None
+            user.parental_consent_name = ""
+            user.parental_consent_ip = None
+        return changed
+    user.parent_email = ""
+    user.parental_consent = User.CONSENT_NOT_REQUIRED
+    return False
+
+
+def _client_ip(request) -> str | None:
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    return (forwarded.split(",")[0].strip() or request.META.get("REMOTE_ADDR")) or None
 
 
 def _error(message: str, status_code: int) -> Response:
@@ -89,6 +134,7 @@ class RegisterView(PublicView):
         if User.objects.filter(email=email).exists() or legacy.find_legacy_account(email):
             return _error("Is email se pehle se account hai. Sign in karo ya password reset karo.", status.HTTP_409_CONFLICT)
 
+        ask_parent = False
         try:
             with transaction.atomic():
                 user = User.objects.create_user(
@@ -96,10 +142,16 @@ class RegisterView(PublicView):
                     password=data["password"],
                     display_name=(data.get("display_name") or "").strip() or "Learner",
                 )
+                _apply_terms(user)
+                if "is_minor" in data:
+                    ask_parent = _apply_age(user, data["is_minor"], data.get("parent_email", ""))
+                user.save()
         except IntegrityError:
             return _error("Is email se pehle se account hai. Sign in karo.", status.HTTP_409_CONFLICT)
 
         emails.send_verification_email(user)
+        if ask_parent:
+            emails.send_parent_consent_email(user)
         logger.info("New account registered: %s", user.pk)
         return _signed_in(request, user, status.HTTP_201_CREATED)
 
@@ -375,3 +427,181 @@ class ResendVerificationView(APIView):
             return Response({"message": "Aapka email pehle se verified hai.", "emailVerified": True})
         emails.send_verification_email(request.user)
         return Response({"message": "Verification link bhej diya. Apna inbox check karo."})
+
+
+class AccountSetupView(APIView):
+    """One-time step for accounts that predate the Terms/age questions (old and Google sign-ins)."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        serializer = AccountSetupSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user = request.user
+        _apply_terms(user)
+        ask_parent = _apply_age(user, data["is_minor"], data.get("parent_email", ""))
+        user.save()
+        if ask_parent:
+            emails.send_parent_consent_email(user)
+        return _session_response(request, user)
+
+
+class ParentConsentView(PublicView):
+    """The page a parent opens from the consent email: see the request, then grant or refuse."""
+
+    INVALID = "Yeh link galat hai ya expire ho gaya. Learner app se naya link bhej sakta hai."
+    EXPIRED = "Yeh link expire ho gaya. Learner app se naya link bhej sakta hai."
+
+    @staticmethod
+    def _learner(token: str):
+        claims = emails.read_parent_token(token)
+        user = User.objects.get(pk=claims["uid"], is_active=True)
+        # A learner who changed their parent email invalidates the old links.
+        if not user.is_minor or user.parent_email != claims["parent"]:
+            raise User.DoesNotExist
+        return user
+
+    def get(self, request):
+        try:
+            user = self._learner(request.query_params.get("token", ""))
+        except signing.SignatureExpired:
+            return _error(self.EXPIRED, status.HTTP_400_BAD_REQUEST)
+        except (signing.BadSignature, KeyError, User.DoesNotExist):
+            return _error(self.INVALID, status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {
+                "learnerName": user.display_name,
+                "learnerEmail": user.email,
+                "parentEmail": user.parent_email,
+                "status": user.parental_consent,
+                "decidedAt": user.parental_consent_at,
+            }
+        )
+
+    def post(self, request):
+        serializer = ParentDecisionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            user = self._learner(data["token"])
+        except signing.SignatureExpired:
+            return _error(self.EXPIRED, status.HTTP_400_BAD_REQUEST)
+        except (signing.BadSignature, KeyError, User.DoesNotExist):
+            return _error(self.INVALID, status.HTTP_400_BAD_REQUEST)
+
+        was_granted = user.parental_consent == User.CONSENT_GRANTED
+        granted = data["decision"] == "grant"
+        user.parental_consent = User.CONSENT_GRANTED if granted else User.CONSENT_DENIED
+        user.parental_consent_at = timezone.now()
+        user.parental_consent_name = (data.get("parent_name") or "").strip()
+        user.parental_consent_ip = _client_ip(request)
+        user.save(
+            update_fields=["parental_consent", "parental_consent_at", "parental_consent_name", "parental_consent_ip"]
+        )
+        if was_granted and not granted:
+            revoke_all_sessions(user)  # withdrawing consent ends every session right away
+        emails.send_parent_decision_email(user)
+        logger.info("Parental consent %s for account %s", user.parental_consent, user.pk)
+        message = (
+            "Shukriya! Aapki permission record ho gayi."
+            if granted
+            else "Aapka faisla record ho gaya. Is account se kuch bhi use nahi hoga."
+        )
+        return Response({"status": user.parental_consent, "message": message})
+
+
+class ParentConsentResendView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "email"
+
+    def post(self, request):
+        serializer = ParentResendSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        if not user.is_minor:
+            return _error("Is account ke liye parent consent ki zaroorat nahi hai.", status.HTTP_400_BAD_REQUEST)
+
+        new_parent = (serializer.validated_data.get("parent_email") or "").strip().lower()
+        if new_parent and new_parent != user.parent_email:
+            if new_parent == user.email:
+                return _error("Parent ka email aapke apne email se alag hona chahiye.", status.HTTP_400_BAD_REQUEST)
+            _apply_age(user, True, new_parent)
+            user.save()
+        elif user.parental_consent == User.CONSENT_GRANTED:
+            return Response({"message": "Parent ne pehle hi permission de di hai."})
+
+        emails.send_parent_consent_email(user)
+        return _session_response(request, user, {"message": f"Link {public_user(user)['parentEmail']} pe bhej diya."})
+
+
+class ExportAccountView(APIView):
+    """Everything this service stores about the account (DPDP right to access)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        u = request.user
+        return Response(
+            {
+                "account": {
+                    "email": u.email,
+                    "displayName": u.display_name,
+                    "emailVerified": u.email_verified,
+                    "signedUpAt": u.date_joined,
+                    "lastLoginAt": u.last_login,
+                    "googleLinked": bool(u.google_sub),
+                    "hasPassword": u.has_usable_password(),
+                    "termsAcceptedAt": u.terms_accepted_at,
+                    "termsVersion": u.terms_version,
+                    "isMinor": u.is_minor,
+                    "parentEmail": u.parent_email or None,
+                    "parentalConsent": u.parental_consent,
+                    "parentalConsentAt": u.parental_consent_at,
+                    "parentalConsentBy": u.parental_consent_name or None,
+                }
+            }
+        )
+
+
+class DeleteAccountView(APIView):
+    """Deletes the login and, through the Node API, the learner profile (DPDP right to erasure)."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        serializer = DeleteAccountSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+
+        if user.has_usable_password() and not user.check_password(serializer.validated_data.get("password") or ""):
+            return _error("Password galat hai.", status.HTTP_400_BAD_REQUEST)
+        if not settings.INTERNAL_API_KEY:
+            return _error(
+                "Account delete abhi configure nahi hai. Support se baat karo.", status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        # Wipe the learner profile first; only then remove the login, so a
+        # failure never leaves profile data behind without a way to reach it.
+        try:
+            res = requests.post(
+                f"{settings.NODE_API_URL}/internal/accounts/delete",
+                json={"email": user.email},
+                headers={"X-Internal-Key": settings.INTERNAL_API_KEY},
+                timeout=15,
+            )
+            res.raise_for_status()
+        except requests.RequestException:
+            logger.exception("Profile deletion failed for account %s", user.pk)
+            return _error("Account delete nahi ho paya. Thodi der baad dobara try karo.", status.HTTP_502_BAD_GATEWAY)
+
+        revoke_all_sessions(user)
+        account_id = user.pk
+        user.delete()
+        logger.info("Account %s deleted at the learner's request", account_id)
+
+        response = Response({"message": "Aapka account aur data delete ho gaya."})
+        clear_refresh_cookie(response)
+        return response

@@ -15,4 +15,9 @@ urlpatterns = [
     path("password/reset/", views.ResetPasswordView.as_view(), name="password_reset"),
     path("email/verify/", views.VerifyEmailView.as_view(), name="email_verify"),
     path("email/resend/", views.ResendVerificationView.as_view(), name="email_resend"),
+    path("account/setup/", views.AccountSetupView.as_view(), name="account_setup"),
+    path("account/export/", views.ExportAccountView.as_view(), name="account_export"),
+    path("account/delete/", views.DeleteAccountView.as_view(), name="account_delete"),
+    path("parent-consent/", views.ParentConsentView.as_view(), name="parent_consent"),
+    path("parent-consent/resend/", views.ParentConsentResendView.as_view(), name="parent_consent_resend"),
 ]

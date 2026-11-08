@@ -15,6 +15,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isMinor, setIsMinor] = useState<boolean | null>(null);
+  const [parentEmail, setParentEmail] = useState('');
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState('');
   const { user, initialized, signUp, signInWithGoogle, loading } = useAuthStore();
   const router = useRouter();
@@ -36,9 +39,21 @@ export default function SignupPage() {
       setError('Password kam se kam 8 characters ka hona chahiye');
       return;
     }
+    if (isMinor === null) {
+      setError('Apni umar ka group chuno');
+      return;
+    }
+    if (isMinor && !parentEmail.trim()) {
+      setError('18 se kam ho to parent ya guardian ka email likho');
+      return;
+    }
+    if (!accepted) {
+      setError('Terms aur Privacy Policy accept karo');
+      return;
+    }
     signingUp.current = true;
     try {
-      await signUp(email.trim(), password, name.trim());
+      await signUp(email.trim(), password, name.trim(), { isMinor, parentEmail: parentEmail.trim() });
       router.push('/onboarding/profile');
     } catch (err) {
       signingUp.current = false;
@@ -140,6 +155,59 @@ export default function SignupPage() {
             ))}
           </div>
         </div>
+        <fieldset>
+          <legend className="label">Aapki umar</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { v: false, label: '18 ya usse zyada' },
+              { v: true, label: '18 se kam' },
+            ].map(({ v, label }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setIsMinor(v)}
+                aria-pressed={isMinor === v}
+                className={`rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition ${
+                  isMinor === v
+                    ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-200'
+                    : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        {isMinor && (
+          <div className="rounded-xl bg-accent-50 p-3 dark:bg-accent-950/30">
+            <label htmlFor="parent-email" className="label">Parent / guardian ka email</label>
+            <input
+              id="parent-email"
+              type="email"
+              value={parentEmail}
+              onChange={(e) => setParentEmail(e.target.value)}
+              className="input-field"
+              placeholder="parent@example.com"
+              required
+            />
+            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+              Unhe ek email jayega. Unki permission ke baad hi account chalega (DPDP Act 2023).
+            </p>
+          </div>
+        )}
+        <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-brand-600"
+          />
+          <span>
+            Main <Link href="/terms" target="_blank" className="font-semibold text-brand-600 underline">Terms</Link> aur{' '}
+            <Link href="/privacy" target="_blank" className="font-semibold text-brand-600 underline">Privacy Policy</Link>{' '}
+            accept karta/karti hoon.
+          </span>
+        </label>
         <FormError message={error} />
         <button type="submit" disabled={loading} className="btn-primary w-full py-3">
           {loading && <Loader2 size={16} className="animate-spin" />}

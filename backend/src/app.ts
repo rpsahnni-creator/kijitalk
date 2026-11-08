@@ -16,6 +16,8 @@ import gamificationRoutes from './routes/gamification.routes';
 import debateRoutes from './routes/debate.routes';
 import coursesRoutes from './routes/courses.routes';
 import subscriptionRoutes from './routes/subscription.routes';
+import accountRoutes from './routes/account.routes';
+import internalRoutes from './routes/internal.routes';
 
 export function createApp() {
   const app = express();
@@ -80,6 +82,8 @@ export function createApp() {
   app.use('/api/debate', debateRoutes);
   app.use('/api/courses', coursesRoutes);
   app.use('/api/subscription', subscriptionRoutes);
+  app.use('/api/account', accountRoutes);
+  app.use('/internal', internalRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

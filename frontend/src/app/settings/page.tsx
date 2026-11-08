@@ -21,6 +21,7 @@ import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { PageHeader, Toggle } from '@/components/ui';
 import { SecuritySection } from '@/components/SecuritySection';
+import { MyDataSection } from '@/components/MyDataSection';
 import { useAuthStore, useSettingsStore } from '@/stores/useStore';
 import { api, UserProfile } from '@/lib/api';
 import { speechService } from '@/lib/speech';
@@ -297,6 +298,7 @@ export default function SettingsPage() {
         </div>
 
         <SecuritySection />
+        <MyDataSection />
 
         <button type="button" onClick={handleSignOut} className="btn-secondary w-full text-red-600 dark:text-red-400">
           <LogOut size={18} /> Sign Out

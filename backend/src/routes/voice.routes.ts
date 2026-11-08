@@ -72,7 +72,7 @@ router.post('/pronunciation', authMiddleware, async (req: AuthRequest, res: Resp
       }
     }
 
-    const result = await analyzePronunciation(expected, transcribed);
+    const result = await analyzePronunciation(expected, transcribed, user?.id);
 
     if (user) {
       await prisma.progress.create({

@@ -7,6 +7,8 @@ export interface AccessTokenClaims {
   email: string;
   name: string;
   emailVerified: boolean;
+  /** "ok", or what still blocks the learner: "setup" | "parent_pending" | "parent_denied". */
+  gate: string;
 }
 
 /**
@@ -32,6 +34,8 @@ export function verifyAccessToken(token: string): AccessTokenClaims | null {
       email: claims.email.toLowerCase(),
       name: typeof claims.name === 'string' && claims.name ? claims.name : 'Learner',
       emailVerified: claims.email_verified === true,
+      // Tokens minted before the gate claim existed were all for active accounts.
+      gate: typeof claims.gate === 'string' ? claims.gate : 'ok',
     };
   } catch {
     return null;

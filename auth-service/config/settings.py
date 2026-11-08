@@ -143,6 +143,15 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="KijiTalk <no-reply@kijitalk.local>")
 
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:3100").rstrip("/")
+
+# Bump when the Terms or Privacy Policy change in a way users must re-accept.
+TERMS_VERSION = config("TERMS_VERSION", default="2026-11-08")
+PARENT_CONSENT_MAX_AGE = 60 * 60 * 24 * 30
+
+# Deleting an account also wipes the learner profile in the Node API, through
+# an internal endpoint protected by this shared key (same value in backend/.env).
+NODE_API_URL = config("NODE_API_URL", default="http://localhost:4001").rstrip("/")
+INTERNAL_API_KEY = config("INTERNAL_API_KEY", default="")
 GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
 
 

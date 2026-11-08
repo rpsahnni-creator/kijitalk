@@ -18,7 +18,16 @@ def issue_tokens(user) -> RefreshToken:
     refresh["email"] = user.email
     refresh["name"] = user.display_name
     refresh["email_verified"] = user.email_verified
+    # The Node API only serves learning features when this is "ok" — see User.access_gate.
+    refresh["gate"] = user.access_gate
     return refresh
+
+
+def _mask_email(email: str) -> str:
+    if not email or "@" not in email:
+        return ""
+    name, domain = email.split("@", 1)
+    return f"{name[:2]}{'*' * max(1, len(name) - 2)}@{domain}"
 
 
 def public_user(user) -> dict:
@@ -28,6 +37,11 @@ def public_user(user) -> dict:
         "displayName": user.display_name,
         "emailVerified": user.email_verified,
         "hasPassword": user.has_usable_password(),
+        "gate": user.access_gate,
+        "termsAccepted": bool(user.terms_accepted_at),
+        "isMinor": user.is_minor,
+        "parentalConsent": user.parental_consent,
+        "parentEmail": _mask_email(user.parent_email),
     }
 
 

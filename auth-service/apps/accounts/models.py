@@ -45,6 +45,40 @@ class User(AbstractUser):
     # Set when the account was carried over from the old Node-only login.
     migrated_from_legacy = models.BooleanField(default=False)
 
+    # ── Terms & age (DPDP Act 2023) ────────────────────────────────────────
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    terms_version = models.CharField(max_length=20, blank=True, default="")
+    age_confirmed = models.BooleanField(default=False)
+    is_minor = models.BooleanField(default=False)
+
+    # ── Verifiable parental consent for learners under 18 ──────────────────
+    CONSENT_NOT_REQUIRED = "not_required"
+    CONSENT_PENDING = "pending"
+    CONSENT_GRANTED = "granted"
+    CONSENT_DENIED = "denied"
+    CONSENT_CHOICES = [
+        (CONSENT_NOT_REQUIRED, "Not required (18+)"),
+        (CONSENT_PENDING, "Waiting for parent"),
+        (CONSENT_GRANTED, "Parent consented"),
+        (CONSENT_DENIED, "Parent refused or withdrew"),
+    ]
+    parent_email = models.EmailField(blank=True, default="")
+    parental_consent = models.CharField(max_length=20, choices=CONSENT_CHOICES, default=CONSENT_NOT_REQUIRED)
+    parental_consent_at = models.DateTimeField(null=True, blank=True)
+    parental_consent_name = models.CharField(max_length=120, blank=True, default="")
+    parental_consent_ip = models.GenericIPAddressField(null=True, blank=True)
+
+    @property
+    def access_gate(self) -> str:
+        """What the learner may do right now: "ok", or the step still blocking them."""
+        if not self.terms_accepted_at or not self.age_confirmed:
+            return "setup"
+        if self.is_minor and self.parental_consent == self.CONSENT_PENDING:
+            return "parent_pending"
+        if self.is_minor and self.parental_consent == self.CONSENT_DENIED:
+            return "parent_denied"
+        return "ok"
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

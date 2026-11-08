@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -59,6 +59,11 @@ function ChatPreview() {
 export default function WelcomePage() {
   const router = useRouter();
   const { user, initialized } = useAuthStore();
+  const [deleted, setDeleted] = useState(false);
+
+  useEffect(() => {
+    setDeleted(new URLSearchParams(window.location.search).get('deleted') === '1');
+  }, []);
 
   useEffect(() => {
     if (initialized && user) router.replace('/dashboard');
@@ -66,6 +71,11 @@ export default function WelcomePage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
+      {deleted && (
+        <div role="status" className="bg-leaf-700 px-4 py-2.5 text-center text-sm font-medium text-white">
+          Aapka account aur data delete ho gaya. KijiTalk use karne ke liye shukriya 🙏
+        </div>
+      )}
       {/* Hero */}
       <section className="relative overflow-hidden gradient-hero">
         <div className="pointer-events-none absolute -left-32 top-10 h-96 w-96 rounded-full bg-white/10 blur-3xl" />

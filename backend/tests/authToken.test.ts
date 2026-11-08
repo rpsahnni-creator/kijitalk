@@ -17,6 +17,7 @@ describe('verifyAccessToken (tokens from auth-service)', () => {
       email: 'asha@example.com',
       name: 'Asha',
       emailVerified: true,
+      gate: 'ok',
     });
   });
 

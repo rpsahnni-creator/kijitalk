@@ -44,6 +44,18 @@ enum PaymentStatus {
   failed
 }
 
+// Mirrors Razorpay subscription states.
+enum SubscriptionStatus {
+  created
+  authenticated
+  active
+  pending
+  halted
+  cancelled
+  completed
+  expired
+}
+
 model User {
   id                  String      @id @default(cuid())
   email               String      @unique
@@ -84,13 +96,19 @@ model User {
   settings Json @default("{\"darkMode\":false,\"notifications\":true,\"dailyGoalMinutes\":15,\"hindiLabels\":true,\"voiceSpeed\":0.9,\"accent\":\"indian\"}")
 
   lastActiveAt DateTime @default(now())
+  // Set when the learner deletes their account. Personal data is wiped right
+  // away; the row stays only so payment/invoice records required by GST law
+  // keep a valid owner.
+  deletedAt    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   progress     Progress[]
   chatSessions ChatSession[]
   mistakeLogs  MistakeLog[]
-  payments     Payment[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
 
   @@map("users")
 }
@@ -193,17 +211,103 @@ model ChatMessage {
 }
 
 model Payment {
-  id                String        @id @default(cuid())
-  userId            String
-  user              User          @relation(fields: [userId], references: [id])
-  razorpayOrderId   String        @unique
-  razorpayPaymentId String?
-  amountInr         Int
-  status            PaymentStatus @default(created)
+  id                     String        @id @default(cuid())
+  userId                 String
+  user                   User          @relation(fields: [userId], references: [id])
+  // One-off orders have an order id; subscription charges have a subscription id.
+  razorpayOrderId        String?       @unique
+  razorpaySubscriptionId String?
+  razorpayPaymentId      String?       @unique
+  amountInr              Int
+  status                 PaymentStatus @default(created)
+  invoice                Invoice?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([razorpaySubscriptionId])
   @@map("payments")
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String
+  user                   User               @relation(fields: [userId], references: [id])
+  razorpaySubscriptionId String             @unique
+  planId                 String
+  status                 SubscriptionStatus @default(created)
+  currentStart           DateTime?
+  currentEnd             DateTime?
+  // The learner asked to stop renewing; premium lasts until currentEnd.
+  cancelAtPeriodEnd      Boolean            @default(false)
+  cancelledAt            DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+// A GST tax invoice for one successful payment. Amounts are in paise and the
+// seller/buyer details are snapshotted so an issued invoice never changes.
+model Invoice {
+  id            String    @id @default(cuid())
+  number        String    @unique
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  paymentId     String    @unique
+  payment       Payment   @relation(fields: [paymentId], references: [id])
+  issuedAt      DateTime  @default(now())
+  buyerName     String
+  buyerEmail    String
+  buyerState    String?
+  placeOfSupply String
+  description   String
+  sacCode       String
+  taxablePaise  Int
+  cgstPaise     Int       @default(0)
+  sgstPaise     Int       @default(0)
+  igstPaise     Int       @default(0)
+  totalPaise    Int
+  seller        Json
+  emailedAt     DateTime?
+
+  @@index([userId, issuedAt])
+  @@map("invoices")
+}
+
+// Gap-free invoice numbering per Indian financial year (e.g. "2026-27").
+model InvoiceCounter {
+  financialYear String @id
+  lastNumber    Int    @default(0)
+
+  @@map("invoice_counters")
+}
+
+// Razorpay retries webhooks; remembering event ids makes handling idempotent.
+model WebhookEvent {
+  id         String   @id
+  event      String
+  receivedAt DateTime @default(now())
+
+  @@map("webhook_events")
+}
+
+// One row per AI tutor call, for usage and reliability monitoring.
+model AiUsageLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  feature   String
+  provider  String
+  ok        Boolean
+  fallback  Boolean  @default(false)
+  latencyMs Int
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([provider, createdAt])
+  @@map("ai_usage_logs")
 }

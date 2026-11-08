@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
+import { isProviderPaused, recordAiCall } from './aiMonitor.service';
 import {
   ChatResponse,
   KIKI_SYSTEM,
@@ -44,11 +45,23 @@ async function generateWithFallback(
       return result.response.text();
     } catch (error) {
       lastError = error;
+      const text = error instanceof Error ? error.message : String(error);
+      if (/API_KEY_INVALID|API key not valid|PERMISSION_DENIED/i.test(text)) break; // no model will work
       logger.warn(`Gemini model ${modelName} failed, trying next...`, error);
     }
   }
 
   throw lastError;
+}
+
+/** One Gemini tutor reply. Throws when every Gemini model fails — the tutor service then falls back. */
+export async function geminiReply(
+  message: string,
+  history: TutorMessage[] = [],
+  systemPrompt?: string
+): Promise<ChatResponse> {
+  const text = await generateWithFallback(message, toGeminiHistory(history), systemPrompt ?? KIKI_SYSTEM);
+  return parseTutorJson(text, message);
 }
 
 export async function chatWithGemini(
@@ -57,17 +70,27 @@ export async function chatWithGemini(
   systemPrompt?: string
 ): Promise<ChatResponse> {
   try {
-    const text = await generateWithFallback(message, toGeminiHistory(history), systemPrompt ?? KIKI_SYSTEM);
-    return parseTutorJson(text, message);
+    return await geminiReply(message, history, systemPrompt);
   } catch (error) {
     logger.error('Gemini API error:', error);
     return offlineKikiResponse(message);
   }
 }
 
+/** Startup check so a bad GEMINI_API_KEY shows up in logs and /health right away. */
+export async function checkGeminiKey(): Promise<{ ok: boolean; error?: unknown }> {
+  try {
+    await genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }).countTokens('ping');
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
 export async function analyzePronunciation(
   expected: string,
-  spoken: string
+  spoken: string,
+  userId?: string
 ): Promise<{ score: number; feedback: string; wordScores: Array<{ word: string; score: number }> }> {
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
@@ -82,10 +105,13 @@ Return JSON only:
   "wordScores": [{ "word": "...", "score": 0-100 }]
 }`;
 
+  const started = Date.now();
   try {
+    if (isProviderPaused('gemini')) throw new Error('Gemini paused after repeated failures');
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     const parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, ''));
+    recordAiCall({ provider: 'gemini', feature: 'voice', ok: true, latencyMs: Date.now() - started, userId });
     return {
       score: Math.min(100, Math.max(0, parsed.score ?? 0)),
       feedback: parsed.feedback ?? 'Keep practicing!',
@@ -93,6 +119,8 @@ Return JSON only:
     };
   } catch (error) {
     logger.error('Pronunciation analysis error:', error);
+    recordAiCall({ provider: 'gemini', feature: 'voice', ok: false, latencyMs: Date.now() - started, userId, error });
+    // Local word-by-word scoring keeps voice practice working without AI.
     return calculateBasicPronunciationScore(expected, spoken);
   }
 }
