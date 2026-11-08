@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/stores/useStore';
+import { AccountGate } from '@/components/AccountGate';
 import { api } from '@/lib/api';
-import { BOARDS, GRADES, INDIAN_STATES, LEARNING_GOALS, LEVELS } from '@/lib/i18n';
+import { BOARDS, GRADES, HOME_LANGUAGES, INDIAN_STATES, LEARNING_GOALS, LEVELS } from '@/lib/i18n';
 
 export default function ProfileOnboardingPage() {
   const { token, user, profile, initialized, syncProfile } = useAuthStore();
@@ -26,6 +27,7 @@ export default function ProfileOnboardingPage() {
     state: '',
     learningGoal: 'school',
     targetLevel: 'beginner',
+    nativeLanguage: 'hi',
   });
 
   const saveProfile = async () => {
@@ -37,7 +39,6 @@ export default function ProfileOnboardingPage() {
         '/api/auth/me',
         {
           ...form,
-          nativeLanguage: 'hi',
           onboardingCompleted: true,
         },
         token
@@ -50,7 +51,9 @@ export default function ProfileOnboardingPage() {
     }
   };
 
+  // Terms / parental consent come first: nothing is collected before consent.
   return (
+    <AccountGate>
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
       <div className="mx-auto w-full max-w-lg flex-1 px-5 py-10">
         <div className="mb-6 text-center">
@@ -119,6 +122,18 @@ export default function ProfileOnboardingPage() {
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
+            <label htmlFor="home-language" className="block font-semibold">Ghar ki bhasha · Home language</label>
+            <select
+              id="home-language"
+              value={form.nativeLanguage}
+              onChange={(e) => setForm({ ...form, nativeLanguage: e.target.value })}
+              className="input-field"
+            >
+              {HOME_LANGUAGES.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+            <p className="-mt-2 text-xs text-slate-500">Kiki is bhasha mein likhe/bole sawal samjhegi aur English sikhayegi.</p>
             <h2 className="font-semibold">English kyun seekhna hai?</h2>
             <div className="space-y-2">
               {LEARNING_GOALS.map(({ value, label, desc }) => (
@@ -192,5 +207,6 @@ export default function ProfileOnboardingPage() {
         </div>
       </div>
     </div>
+    </AccountGate>
   );
 }

@@ -1,8 +1,13 @@
+import './instrument';
 import { createApp } from './app';
 import { connectDatabase } from './config/database';
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { seedLessons } from './scripts/seedLessons';
+import { checkGeminiKey } from './services/gemini.service';
+import { isClaudeAvailable } from './services/claude.service';
+import { markProviderCheck, setProviderConfigured } from './services/aiMonitor.service';
+import { startScheduler } from './jobs/streakReminders';
 
 async function bootstrap() {
   const dbConnected = await connectDatabase();
@@ -19,6 +24,18 @@ async function bootstrap() {
   }
 
   const app = createApp();
+
+  // AI self-check: a wrong key is logged loudly at startup instead of surfacing
+  // later as "AI service is busy" replies.
+  setProviderConfigured('gemini', !!env.GEMINI_API_KEY && env.GEMINI_API_KEY !== 'test-key');
+  setProviderConfigured('claude', isClaudeAvailable());
+  void checkGeminiKey().then(({ ok, error }) => {
+    markProviderCheck('gemini', ok, error);
+    if (ok) logger.info('✅ Gemini API key works');
+    else logger.error('❌ Gemini check failed — Kiki will fall back to Claude/offline replies', error);
+  });
+  if (env.ENABLE_SCHEDULER && dbConnected) startScheduler();
+  if (!isClaudeAvailable()) logger.warn('⚠️ ANTHROPIC_API_KEY not set — no Claude fallback if Gemini fails');
 
   const server = app.listen(env.PORT, () => {
     logger.info(`🚀 KijiTalk API running on http://localhost:${env.PORT}`);

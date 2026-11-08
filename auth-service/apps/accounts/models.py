@@ -44,6 +44,9 @@ class User(AbstractUser):
     google_sub = models.CharField(max_length=64, unique=True, null=True, blank=True)
     # Set when the account was carried over from the old Node-only login.
     migrated_from_legacy = models.BooleanField(default=False)
+    # When sessions were last revoked (logout, password change/reset, consent
+    # withdrawn). Ends the refresh-token reuse grace window for older tokens.
+    sessions_revoked_at = models.DateTimeField(null=True, blank=True)
 
     # ── Terms & age (DPDP Act 2023) ────────────────────────────────────────
     terms_accepted_at = models.DateTimeField(null=True, blank=True)

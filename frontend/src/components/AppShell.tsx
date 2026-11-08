@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Moon, Sun, X } from 'lucide-react';
+import { Menu, Moon, Shield, Sun, X } from 'lucide-react';
+import { api } from '@/lib/api';
 import { FeatureIcon } from './FeatureIcon';
 import { AccountGate } from './AccountGate';
 import { useAuthStore, useSettingsStore } from '@/stores/useStore';
@@ -47,6 +48,18 @@ export function AppShell({
   const { darkMode, setDarkMode } = useSettingsStore();
   const hindi = profile?.settings?.hindiLabels !== false;
   const [menuOpen, setMenuOpen] = useState(false);
+  const token = useAuthStore((s) => s.token);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Only admins (ADMIN_EMAILS on the API) see the Admin link.
+  const hasToken = !!token;
+  useEffect(() => {
+    if (!hasToken) return;
+    api
+      .get('/api/admin/me', useAuthStore.getState().token)
+      .then(() => setIsAdmin(true))
+      .catch(() => setIsAdmin(false));
+  }, [hasToken]);
 
   const toggleDarkMode = () => {
     const next = !darkMode;
@@ -113,6 +126,18 @@ export function AppShell({
               </div>
             </div>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={`mx-0 flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${
+                isActive(pathname, '/admin')
+                  ? 'bg-leaf-50 text-leaf-800 dark:bg-leaf-950/50 dark:text-leaf-300'
+                  : 'text-leaf-700 hover:bg-slate-100 dark:text-leaf-400 dark:hover:bg-slate-900'
+              }`}
+            >
+              <Shield size={20} /> Admin panel
+            </Link>
+          )}
         </nav>
 
         <Link

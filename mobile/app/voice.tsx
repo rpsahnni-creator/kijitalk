@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import * as Speech from 'expo-speech';
 import { useAuthStore } from '@/stores/authStore';
 import { api, ApiError } from '@/lib/api';
+import { MicButton } from '@/components/MicButton';
+import { speechService } from '@/lib/speech';
 
 const PHRASES = [
   'The weather is beautiful today.',
@@ -20,12 +22,12 @@ export default function VoiceScreen() {
 
   const speak = () => Speech.speak(phrase, { language: 'en-US' });
 
-  const analyze = async () => {
-    if (!token || !spoken.trim()) return;
+  const analyze = async (said = spoken) => {
+    if (!token || !said.trim()) return;
     try {
       const res = await api.post<{ score: number; feedback: string }>(
         '/api/voice/pronunciation',
-        { expected: phrase, spoken: spoken.trim() },
+        { expected: phrase, spoken: said.trim() },
         token
       );
       setScore(res.score);
@@ -42,7 +44,9 @@ export default function VoiceScreen() {
   return (
     <View className="flex-1 bg-slate-50 px-6 pt-14 dark:bg-slate-900">
       <Text className="mb-2 text-xl font-bold text-slate-900 dark:text-white">Voice Practice</Text>
-      <Text className="mb-8 text-slate-500">Speak the phrase, then type what you said</Text>
+      <Text className="mb-8 text-slate-500">
+        {speechService.canListen ? 'Mic dabao aur phrase bolo — score turant milega' : 'Phrase bolo, phir jo bola wo type karo'}
+      </Text>
 
       <View className="mb-6 rounded-3xl bg-white p-6 dark:bg-slate-800">
         <Text className="text-center text-xl font-semibold text-slate-900 dark:text-white">{phrase}</Text>
@@ -51,14 +55,25 @@ export default function VoiceScreen() {
         </TouchableOpacity>
       </View>
 
+      <View className="mb-4 items-center">
+        <MicButton
+          size="lg"
+          onPartial={(t) => setSpoken(t)}
+          onText={(t) => {
+            setSpoken(t);
+            void analyze(t);
+          }}
+        />
+      </View>
+
       <TextInput
         className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-        placeholder="Type what you spoke..."
+        placeholder={speechService.canListen ? 'Ya yahan type karo...' : 'Type what you spoke...'}
         value={spoken}
         onChangeText={setSpoken}
       />
 
-      <TouchableOpacity onPress={analyze} className="mb-6 rounded-2xl bg-brand-600 py-4">
+      <TouchableOpacity onPress={() => void analyze()} className="mb-6 rounded-2xl bg-brand-600 py-4">
         <Text className="text-center font-semibold text-white">Check Pronunciation</Text>
       </TouchableOpacity>
 

@@ -56,7 +56,7 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
     const requestedEngine = engine === 'claude' && !(user && canUseClaudeEngine(user)) ? 'gemini' : engine;
     const prompt = `[Debate topic: ${topic.topic}] Student says: ${message}`;
 
-    const aiResponse = await generateTutorReply(requestedEngine, prompt, history, DEBATE_SYSTEM, user?.id, 'debate');
+    const aiResponse = await generateTutorReply(requestedEngine, prompt, history, DEBATE_SYSTEM, user?.id, 'debate', user?.nativeLanguage);
 
     if (user) {
       awardActivity(user, 'debate', 85);

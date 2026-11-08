@@ -51,6 +51,8 @@ export default function PrivacyPage() {
           <li><strong>AI tutor:</strong> Google (Gemini) and Anthropic (Claude) process the messages you send to Kiki to generate replies. These providers may process data outside India.</li>
           <li><strong>Payments:</strong> Razorpay processes subscription payments.</li>
           <li><strong>Email and hosting:</strong> our email delivery and cloud hosting providers.</li>
+          <li><strong>Error reports:</strong> Sentry receives technical crash reports (no names, emails or messages) so we can fix bugs.</li>
+          <li><strong>Product analytics (adults only):</strong> PostHog receives anonymous usage events — which screens are used and where people get stuck — under an opaque id. Learners under 18 are never tracked.</li>
         </ul>
         <p>We may also disclose data when required by law or by a lawful order of a government authority.</p>
       </Section>
@@ -70,7 +72,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section n={7} title="Cookies">
-        <p>We use one essential cookie to keep you signed in securely. We do not use advertising or tracking cookies.</p>
+        <p>We use one essential cookie to keep you signed in securely. We do not use advertising or tracking cookies. Product analytics for adult learners runs without cookies and is switched off entirely for anyone under 18.</p>
       </Section>
 
       <Section n={8} title="Security">

@@ -81,8 +81,12 @@ def read_refresh_token(request) -> str | None:
 
 def revoke_all_sessions(user) -> int:
     """Blacklist every refresh token the user holds — signs them out everywhere."""
+    from django.utils import timezone
+
     revoked = 0
     for outstanding in OutstandingToken.objects.filter(user=user):
         _, created = BlacklistedToken.objects.get_or_create(token=outstanding)
         revoked += int(created)
+    # Stamped after blacklisting, so no token revoked here gets the reuse grace.
+    type(user).objects.filter(pk=user.pk).update(sessions_revoked_at=timezone.now())
     return revoked

@@ -10,6 +10,7 @@ import { KikiAvatar } from '@/components/KikiAvatar';
 import { FeatureIcon, type FeatureIconName } from '@/components/FeatureIcon';
 import { FeatureTile, SectionTitle, Skeleton } from '@/components/ui';
 import { EmailVerifyBanner } from '@/components/EmailVerifyBanner';
+import { MyClassSection } from '@/components/MyClassSection';
 import { useAuthStore } from '@/stores/useStore';
 import { api, Lesson, DashboardData } from '@/lib/api';
 import { speechService } from '@/lib/speech';
@@ -35,6 +36,8 @@ export default function DashboardPage() {
   const [dailyLesson, setDailyLesson] = useState<Lesson | null>(null);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [reviewDue, setReviewDue] = useState(0);
+  const [isTeacher, setIsTeacher] = useState(false);
 
   useEffect(() => {
     if (initialized && !user) router.replace('/login');
@@ -51,6 +54,8 @@ export default function DashboardPage() {
     Promise.allSettled([
       api.get<{ lesson: Lesson }>('/api/lessons/daily', token).then((d) => setDailyLesson(d.lesson)),
       api.get<DashboardData>('/api/progress/dashboard', token).then(setDashboard),
+      api.get<{ due: number }>('/api/review/stats', token).then((r) => setReviewDue(r.due)),
+      api.get<{ schools: unknown[] }>('/api/school/me', token).then((r) => setIsTeacher(r.schools.length > 0)),
     ]).finally(() => setLoaded(true));
   }, [token]);
 
@@ -81,6 +86,8 @@ export default function DashboardPage() {
         { href: dailyLesson ? `/lessons/${dailyLesson.id}` : '/lessons', icon: 'calendar', label: 'Aaj ka Lesson', badge: dailyLesson ? 'New' : null },
         { href: '/lessons', icon: 'lessons', label: 'Lessons' },
         { href: '/courses', icon: 'courses', label: 'Courses' },
+        { href: '/review', icon: 'idea', label: 'Revision', badge: reviewDue || null },
+        { href: '/placement', icon: 'badges', label: 'Level test', badge: profile?.placementAt ? null : 'Naya' },
         { href: '#phrase', icon: 'idea', label: 'Daily Phrase' },
       ],
     },
@@ -99,6 +106,7 @@ export default function DashboardPage() {
         { href: '/settings', icon: 'profile', label: 'Profile' },
         { href: '/pricing', icon: 'premium', label: 'Premium' },
         { href: '/settings', icon: 'settings', label: 'Settings' },
+        ...(isTeacher ? [{ href: '/school', icon: 'courses' as const, label: 'Teacher' }] : []),
         { href: '/chat', icon: 'help', label: 'Need Help' },
       ],
     },
@@ -164,6 +172,7 @@ export default function DashboardPage() {
         </section>
 
         <EmailVerifyBanner />
+        <MyClassSection />
 
         {/* Icon grid sections */}
         {sections.map((section) => (

@@ -20,7 +20,14 @@ interface AuthState {
   loading: boolean;
   initialized: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string,
+    age: { isMinor: boolean; parentEmail?: string }
+  ) => Promise<void>;
+  completeSetup: (input: { isMinor: boolean; parentEmail?: string }) => Promise<void>;
+  resendParentConsent: (parentEmail?: string) => Promise<string>;
   signInWithGoogle: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<string | null>;
@@ -29,6 +36,9 @@ interface AuthState {
 }
 
 let refreshInFlight: Promise<string | null> | null = null;
+// Bumped on explicit sign-in / sign-out so a refresh that started earlier
+// can't overwrite the newer session.
+let sessionEpoch = 0;
 
 export const useAuthStore = create<AuthState>()((set, get) => {
   const applySession = async (session: AuthSession) => {
@@ -44,7 +54,9 @@ export const useAuthStore = create<AuthState>()((set, get) => {
   const signInWith = async (path: string, body: unknown) => {
     set({ loading: true });
     try {
-      await applySession(await authRequest<AuthSession>(path, body));
+      const session = await authRequest<AuthSession>(path, body);
+      sessionEpoch += 1;
+      await applySession(session);
       await get().syncProfile();
     } finally {
       set({ loading: false });
@@ -61,8 +73,36 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     signIn: (email, password) => signInWith('/api/auth/login/', { email, password }),
 
-    signUp: (email, password, displayName) =>
-      signInWith('/api/auth/register/', { email, password, display_name: displayName }),
+    signUp: (email, password, displayName, age) =>
+      signInWith('/api/auth/register/', {
+        email,
+        password,
+        display_name: displayName,
+        accept_terms: true,
+        is_minor: age.isMinor,
+        parent_email: age.parentEmail ?? '',
+      }),
+
+    completeSetup: async ({ isMinor, parentEmail }) => {
+      await applySession(
+        await authRequest<AuthSession>(
+          '/api/auth/account/setup/',
+          { accept_terms: true, is_minor: isMinor, parent_email: parentEmail ?? '' },
+          get().token
+        )
+      );
+      await get().syncProfile();
+    },
+
+    resendParentConsent: async (parentEmail) => {
+      const res = await authRequest<Partial<AuthSession> & { message: string }>(
+        '/api/auth/parent-consent/resend/',
+        parentEmail ? { parent_email: parentEmail } : {},
+        get().token
+      );
+      if (res.access && res.refresh && res.user) await applySession(res as AuthSession);
+      return res.message;
+    },
 
     // Not wired to a UI button yet — Expo's managed workflow (no native dev client
     // in this project) has no reliable Google OAuth flow. A native build can call
@@ -71,6 +111,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     signOut: async () => {
       const refresh = await refreshTokenStore.get();
+      sessionEpoch += 1;
       await clearSession();
       if (refresh) {
         try {
@@ -84,14 +125,17 @@ export const useAuthStore = create<AuthState>()((set, get) => {
     refreshSession: () => {
       // The refresh token rotates on use, so never send it twice in parallel.
       if (refreshInFlight) return refreshInFlight;
+      const startedAt = sessionEpoch;
       refreshInFlight = (async () => {
         const refresh = await refreshTokenStore.get();
         if (!refresh) return null;
         try {
           const session = await authRequest<AuthSession>('/api/auth/token/refresh/', { refresh });
+          if (sessionEpoch !== startedAt) return get().token; // signed in/out meanwhile
           await applySession(session);
           return session.access;
         } catch (error) {
+          if (sessionEpoch !== startedAt) return get().token;
           if (error instanceof ApiError && error.status === 401) await clearSession();
           return null;
         }

@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/useStore';
 import { api, Lesson } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 import { EXERCISE_LABELS, normalize, scoreAnswer, shuffle } from '@/lib/exercise';
+import { track } from '@/lib/analytics';
 
 const MAX_HEARTS = 5;
 
@@ -110,6 +111,7 @@ export default function LessonDetailPage() {
     } catch {
       setSaveFailed(true);
     }
+    track('lesson_completed', { score, hearts: finalHearts, category: lesson?.category ?? null });
     setStatus('completed');
   };
 

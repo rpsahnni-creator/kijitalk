@@ -42,3 +42,36 @@ export function verifyWebhookSignature(rawBody: Buffer, signature: string): bool
   const expected = crypto.createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET).update(rawBody).digest('hex');
   return safeEqual(expected, signature);
 }
+
+// ── Subscriptions (monthly Premium) ─────────────────────────────────────────
+
+export function isSubscriptionConfigured(): boolean {
+  return razorpay !== null && !!env.RAZORPAY_PLAN_ID;
+}
+
+/** Starts a Razorpay subscription on the Premium plan; the learner authorises it in Checkout. */
+export async function createPremiumSubscription(notes: Record<string, string>) {
+  if (!razorpay || !env.RAZORPAY_PLAN_ID) throw new Error('Razorpay subscriptions are not configured');
+  return razorpay.subscriptions.create({
+    plan_id: env.RAZORPAY_PLAN_ID,
+    total_count: 120, // up to 10 years of monthly renewals; cancellable any time
+    customer_notify: 1,
+    notes,
+  });
+}
+
+/** Stops renewals. With atCycleEnd the learner keeps Premium until the paid period ends. */
+export async function cancelRazorpaySubscription(subscriptionId: string, atCycleEnd = true) {
+  if (!razorpay) throw new Error('Razorpay is not configured');
+  return razorpay.subscriptions.cancel(subscriptionId, atCycleEnd);
+}
+
+/** Verifies the signature Checkout returns after a subscription's first payment. */
+export function verifySubscriptionSignature(paymentId: string, subscriptionId: string, signature: string): boolean {
+  if (!env.RAZORPAY_KEY_SECRET) return false;
+  const expected = crypto
+    .createHmac('sha256', env.RAZORPAY_KEY_SECRET)
+    .update(`${paymentId}|${subscriptionId}`)
+    .digest('hex');
+  return safeEqual(expected, signature);
+}

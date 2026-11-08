@@ -11,6 +11,21 @@ export type TutorEngine = 'gemini' | 'claude';
 
 const PROVIDERS: Record<TutorEngine, typeof geminiReply> = { gemini: geminiReply, claude: claudeReply };
 
+/** Home languages Kiki can teach from (onboarding/settings "nativeLanguage"). */
+export const HOME_LANGUAGES: Record<string, string> = {
+  hi: 'Hindi',
+  ta: 'Tamil',
+  bn: 'Bengali',
+  mr: 'Marathi',
+  te: 'Telugu',
+};
+
+export function languageInstruction(code: string | null | undefined): string | null {
+  const name = code ? HOME_LANGUAGES[code] : undefined;
+  if (!name || code === 'hi') return null; // the base prompt already covers Hindi/Hinglish
+  return `This student's home language is ${name}. They may write in ${name} script or in ${name} typed with Roman letters, or mix it with English. Treat that exactly like the Hindi/Hinglish case: give a natural English "translation", teach the English phrase in your reply, and set "wasHindi" to true for any non-English input. Keep your reply in simple English; you may add a few words of ${name} only when it helps explain a tip.`;
+}
+
 /**
  * Which providers to try, in order: the requested one first, then the other as
  * a fallback (when it's configured and allowed), skipping any provider whose
@@ -65,9 +80,13 @@ export async function generateTutorReply(
   history: TutorMessage[] = [],
   systemPrompt?: string,
   userId?: string,
-  feature: AiFeature = 'chat'
+  feature: AiFeature = 'chat',
+  nativeLanguage?: string | null
 ): Promise<ChatResponse & { engineUsed: TutorEngine | 'offline' }> {
-  const basePrompt = systemPrompt ?? KIKI_SYSTEM;
+  const langNote = languageInstruction(nativeLanguage);
+  const basePrompt = langNote ? `${systemPrompt ?? KIKI_SYSTEM}
+
+${langNote}` : systemPrompt ?? KIKI_SYSTEM;
 
   let augmentedPrompt = basePrompt;
   try {

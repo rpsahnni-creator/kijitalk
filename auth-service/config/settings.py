@@ -195,6 +195,8 @@ SIMPLE_JWT = {
 }
 
 REFRESH_COOKIE_NAME = "kt_refresh"
+# A just-rotated refresh token stays usable this long (parallel tabs, lost responses).
+REFRESH_REUSE_GRACE_SECONDS = config("REFRESH_REUSE_GRACE_SECONDS", default=30, cast=int)
 REFRESH_COOKIE_PATH = "/api/auth/"
 REFRESH_COOKIE_SECURE = config("REFRESH_COOKIE_SECURE", default=not DEBUG, cast=bool)
 REFRESH_COOKIE_SAMESITE = config("REFRESH_COOKIE_SAMESITE", default="Lax")
@@ -213,3 +215,16 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": config("LOG_LEVEL", default="INFO")},
 }
+
+
+# ── Error tracking (Sentry) — on only when SENTRY_DSN is set ───────────────
+SENTRY_DSN = config("SENTRY_DSN", default="")
+if SENTRY_DSN and not RUNNING_TESTS:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=config("SENTRY_ENVIRONMENT", default="development" if DEBUG else "production"),
+        traces_sample_rate=config("SENTRY_TRACES_SAMPLE_RATE", default=0.1, cast=float),
+        send_default_pii=False,  # learners are often children — never send emails/IPs to Sentry
+    )

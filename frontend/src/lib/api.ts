@@ -121,6 +121,9 @@ export interface UserProfile {
   onboardingCompleted?: boolean;
   /** From the auth-service access token, echoed by GET /api/auth/me. */
   emailVerified?: boolean;
+  placementScore?: number | null;
+  placementAt?: string | null;
+  schoolLicenseUntil?: string | null;
   streak: number;
   totalMinutes: number;
   lessonsCompleted: number;

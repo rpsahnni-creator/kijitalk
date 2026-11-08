@@ -54,6 +54,10 @@ function secondsLeft(jwt: string): number {
 
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
+// Bumped on every explicit sign-in / sign-out. A refresh that started before
+// one of those must not overwrite it (e.g. a failed refresh from page load
+// signing out a learner who logged in a moment later).
+let sessionEpoch = 0;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const useAuthStore = create<AuthState>()((set, get) => {
@@ -74,7 +78,9 @@ export const useAuthStore = create<AuthState>()((set, get) => {
   const signInWith = async (path: string, body: unknown) => {
     set({ loading: true });
     try {
-      applySession(await authRequest<AuthSession>(path, body));
+      const session = await authRequest<AuthSession>(path, body);
+      sessionEpoch += 1;
+      applySession(session);
       await get().syncProfile();
     } finally {
       set({ loading: false });
@@ -104,6 +110,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
     signInWithGoogle: (idToken) => signInWith('/api/auth/google/', { id_token: idToken }),
 
     signOut: async () => {
+      sessionEpoch += 1;
       clearSession();
       try {
         await authRequest('/api/auth/logout/', {});
@@ -116,13 +123,18 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       // One refresh at a time: the refresh token rotates, so a second parallel
       // call with the same cookie would be rejected.
       if (refreshInFlight) return refreshInFlight;
+      const startedAt = sessionEpoch;
       refreshInFlight = (async () => {
         for (let attempt = 0; attempt < 2; attempt++) {
           try {
             const session = await authRequest<AuthSession>('/api/auth/token/refresh/', {});
+            // Signed out meanwhile: don't bring the session back.
+            if (sessionEpoch !== startedAt && !get().token) return null;
             applySession(session);
             return session.access;
           } catch (error) {
+            // Signed in/out meanwhile: that newer session wins.
+            if (sessionEpoch !== startedAt) return get().token;
             const expired = error instanceof ApiError && error.status === 401;
             // Another tab may have just rotated the cookie; give it a moment once.
             if (expired && attempt === 0) {
@@ -222,6 +234,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         { password, confirm: 'DELETE' },
         get().token
       );
+      sessionEpoch += 1;
       clearSession();
       return message;
     },

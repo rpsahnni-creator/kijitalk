@@ -1,0 +1,32 @@
+name: Daily database backup
+
+# Every day at 02:30 IST (21:00 UTC): runs scripts/backup-db.sh on the
+# production server (keeps 14 days there) and also copies the newest dump
+# here as a workflow artifact kept for 30 days — a second, off-server copy.
+on:
+  schedule:
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Write SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+      - name: Back up on the server
+        run: ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" /opt/kijitalk/scripts/backup-db.sh
+      - name: Copy the newest dump
+        run: |
+          latest=$(ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "ls -t /var/backups/kijitalk/kijitalk-*.sql.gz | head -1")
+          scp "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:$latest" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kijitalk-db-${{ github.run_id }}
+          path: '*.sql.gz'
+          retention-days: 30

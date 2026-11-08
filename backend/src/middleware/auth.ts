@@ -24,14 +24,16 @@ export function evictProfile(email: string): void {
 }
 
 // Until a learner has accepted the Terms and (if under 18) a parent has
-// consented, only these routes work: reading/updating the profile, and
-// downloading or deleting their data.
-const GATE_ALLOWED_PREFIXES = ['/api/auth/me', '/api/account'];
+// consented, only these routes work: reading the profile (to show the gate),
+// and downloading their data. No new personal data (class, board, state…) is
+// collected before consent — DPDP Act s.9. Deletion runs via auth-service.
+const GATE_READ_ONLY = ['/api/auth/me', '/api/account'];
 
-export function gateBlocks(gate: string, url: string): boolean {
+export function gateBlocks(gate: string, url: string, method = 'GET'): boolean {
   if (gate === 'ok') return false;
+  if (method !== 'GET' && method !== 'HEAD') return true;
   const path = url.split('?')[0];
-  return !GATE_ALLOWED_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+  return !GATE_READ_ONLY.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 }
 
 const GATE_MESSAGES: Record<string, string> = {
@@ -78,7 +80,7 @@ export async function authMiddleware(
     return;
   }
 
-  if (gateBlocks(claims.gate, req.originalUrl)) {
+  if (gateBlocks(claims.gate, req.originalUrl, req.method)) {
     res.status(403).json({
       error: GATE_MESSAGES[claims.gate] ?? 'Account abhi active nahi hai.',
       gate: claims.gate,

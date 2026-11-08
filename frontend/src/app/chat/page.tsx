@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/useStore';
 import { useTutorStore } from '@/stores/useTutorStore';
 import { api, ApiError, ChatMessage, TutorEngines } from '@/lib/api';
 import { speechErrorMessage, speechService } from '@/lib/speech';
+import { speechLangFor } from '@/lib/i18n';
 
 const SUGGESTIONS = ['Mera naam Rahul hai', 'Aaj school mein kya hua?', 'How do I introduce myself?', 'Mujhe interview ki taiyari karni hai'];
 
@@ -110,7 +111,7 @@ export default function ChatPage() {
         setListening(false);
         setMicError(speechErrorMessage(code));
       },
-      'hi-IN'
+      speechLangFor(profile?.nativeLanguage)
     );
   };
 
@@ -256,7 +257,7 @@ export default function ChatPage() {
               listening ? 'animate-pulse bg-red-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
             aria-label={listening ? 'Stop voice input' : 'Speak in Hindi'}
-            title="Hindi mein bolo"
+            title="Apni bhasha mein bolo"
           >
             {listening ? <Square size={16} fill="currentColor" /> : <Mic size={20} />}
           </button>

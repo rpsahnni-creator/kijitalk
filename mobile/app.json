@@ -37,7 +37,17 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "KijiTalk aapki awaaz sunkar English bolne ki practice check karta hai.",
+          "speechRecognitionPermission": "KijiTalk aapki boli hui English ko text mein badalta hai taaki pronunciation check ho sake.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
     ],
     "extra": {
       "apiUrl": "http://localhost:4001"

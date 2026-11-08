@@ -105,7 +105,7 @@ router.post('/message', authMiddleware, async (req: AuthRequest, res: Response) 
 
     const history = session.messages.map((m) => ({ role: m.role, content: m.content }));
 
-    const aiResponse = await generateTutorReply(requestedEngine, message, history, systemPrompt, user.id);
+    const aiResponse = await generateTutorReply(requestedEngine, message, history, systemPrompt, user.id, 'chat', user.nativeLanguage);
 
     await prisma.chatMessage.createMany({
       data: [

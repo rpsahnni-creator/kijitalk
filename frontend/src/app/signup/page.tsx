@@ -9,6 +9,7 @@ import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { AuthLayout, FormError, OrDivider } from '@/components/AuthLayout';
 import { isGoogleSignInConfigured } from '@/lib/google';
 import { getAuthErrorMessage } from '@/lib/authErrors';
+import { track } from '@/lib/analytics';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -54,6 +55,7 @@ export default function SignupPage() {
     signingUp.current = true;
     try {
       await signUp(email.trim(), password, name.trim(), { isMinor, parentEmail: parentEmail.trim() });
+      track('signup_completed', { method: 'email' });
       router.push('/onboarding/profile');
     } catch (err) {
       signingUp.current = false;

@@ -25,6 +25,7 @@ import { MyDataSection } from '@/components/MyDataSection';
 import { useAuthStore, useSettingsStore } from '@/stores/useStore';
 import { api, UserProfile } from '@/lib/api';
 import { speechService } from '@/lib/speech';
+import { HOME_LANGUAGES } from '@/lib/i18n';
 
 type Settings = UserProfile['settings'];
 
@@ -56,7 +57,7 @@ function Row({
 }
 
 export default function SettingsPage() {
-  const { user, token, profile, signOut, initialized, updateSettings } = useAuthStore();
+  const { user, token, profile, signOut, initialized, updateSettings, syncProfile } = useAuthStore();
   const { darkMode, setDarkMode } = useSettingsStore();
   const router = useRouter();
   const [tier, setTier] = useState<'free' | 'premium'>('free');
@@ -293,6 +294,27 @@ export default function SettingsPage() {
               <option value="indian">Indian</option>
               <option value="british">British</option>
               <option value="american">American</option>
+            </select>
+          </Row>
+          <Row icon={Languages} title="Ghar ki bhasha" description="Kiki is bhasha se English sikhayegi">
+            <select
+              value={profile?.nativeLanguage ?? 'hi'}
+              aria-label="Home language"
+              onChange={async (e) => {
+                setSaveState('saving');
+                try {
+                  await api.patch('/api/auth/me', { nativeLanguage: e.target.value }, token);
+                  await syncProfile();
+                  setSaveState('saved');
+                } catch {
+                  setSaveState('error');
+                }
+              }}
+              className="input-field w-auto py-2"
+            >
+              {HOME_LANGUAGES.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
             </select>
           </Row>
         </div>

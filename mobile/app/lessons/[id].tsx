@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { api, Lesson } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 import { scoreAnswer, shuffle } from '@/lib/exercise';
+import { MicButton } from '@/components/MicButton';
 
 const MAX_HEARTS = 5;
 
@@ -263,6 +264,15 @@ export default function LessonDetailScreen() {
               <Ionicons name="volume-medium" size={18} color="#dc143c" />
               <Text className="font-medium text-slate-700 dark:text-slate-200">Suno aur repeat karo</Text>
             </TouchableOpacity>
+            {speechService.canListen && (
+              <View className="mt-4 items-center">
+                <MicButton
+                  onText={(t) => setAnswer(t)}
+                  onPartial={(t) => setAnswer(t)}
+                />
+                {!!answer && <Text className="mt-2 text-center text-sm text-slate-600 dark:text-slate-300">Aapne bola: {answer}</Text>}
+              </View>
+            )}
             <TouchableOpacity onPress={() => advance(true)} className="mt-4 rounded-2xl bg-brand-600 py-4">
               <Text className="text-center font-semibold text-white">{exerciseIndex < totalExercises - 1 ? 'Next' : 'Complete Lesson'}</Text>
             </TouchableOpacity>

@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import { startAnalytics, trackPageview } from '@/lib/analytics';
 import { useAuthStore, useSettingsStore } from '@/stores/useStore';
 import { speechService } from '@/lib/speech';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const initAuth = useAuthStore((s) => s.initAuth);
   const profile = useAuthStore((s) => s.profile);
+  const account = useAuthStore((s) => s.account);
+  const pathname = usePathname();
   const darkMode = useSettingsStore((s) => s.darkMode);
   const appliedProfileId = useRef<string | null>(null);
 
@@ -36,6 +40,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
       accent: profile?.settings?.accent,
     });
   }, [profile?.settings?.voiceSpeed, profile?.settings?.accent]);
+
+  // Analytics only for consenting adults (see lib/analytics.ts).
+  useEffect(() => {
+    startAnalytics(account);
+  }, [account]);
+
+  useEffect(() => {
+    if (pathname) trackPageview(pathname);
+  }, [pathname, account]);
 
   return <>{children}</>;
 }

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useTutorStore } from '@/stores/tutorStore';
 import { api, ApiError, ChatMessage, TutorEngines } from '@/lib/api';
 import { speechService } from '@/lib/speech';
+import { MicButton } from '@/components/MicButton';
 
 export default function ChatScreen() {
   const { token } = useAuthStore();
@@ -105,7 +106,8 @@ export default function ChatScreen() {
         {loading && <Text className="text-slate-400">Kiki is typing...</Text>}
       </ScrollView>
 
-      <View className="flex-row gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+      <View className="flex-row items-center gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+        <MicButton onText={(t) => setInput(t)} onPartial={(t) => setInput(t)} disabled={loading} />
         <TextInput
           className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-600 dark:text-white"
           placeholder="Hindi ya English mein likho..."

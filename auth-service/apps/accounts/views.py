@@ -267,7 +267,14 @@ class RefreshView(PublicView):
             old = RefreshToken(raw)  # verifies signature, expiry and blacklist
             user = User.objects.get(pk=old["user_id"], is_active=True)
             old.blacklist()  # rotation: each refresh token works exactly once
-        except (TokenError, KeyError, User.DoesNotExist):
+        except TokenError:
+            user = self._recently_rotated_owner(raw)
+            if user is None:
+                logger.info("Refresh rejected (expired, revoked or replayed token)")
+                response = _error("Session khatam ho gaya. Dobara sign in karo.", status.HTTP_401_UNAUTHORIZED)
+                clear_refresh_cookie(response)
+                return response
+        except (KeyError, User.DoesNotExist):
             response = _error("Session khatam ho gaya. Dobara sign in karo.", status.HTTP_401_UNAUTHORIZED)
             clear_refresh_cookie(response)
             return response
@@ -276,6 +283,39 @@ class RefreshView(PublicView):
         response = Response(token_payload(request, user, refresh))
         set_refresh_cookie(response, refresh)
         return response
+
+    @staticmethod
+    def _recently_rotated_owner(raw: str):
+        """
+        Reuse grace window. A token rotated moments ago is still accepted, so two
+        tabs refreshing together — or a refresh whose response was lost when the
+        page navigated away — don't sign the learner out. Revoked sessions
+        (logout, password change, consent withdrawn) and older replays are
+        rejected.
+        """
+        from datetime import timedelta
+
+        from django.utils import timezone
+        from rest_framework_simplejwt.exceptions import TokenBackendError
+        from rest_framework_simplejwt.state import token_backend
+        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
+
+        try:
+            payload = token_backend.decode(raw, verify=True)  # signature, expiry, iss, aud
+        except TokenBackendError:
+            return None
+        if payload.get("token_type") != "refresh":
+            return None
+        window = timezone.now() - timedelta(seconds=settings.REFRESH_REUSE_GRACE_SECONDS)
+        entry = BlacklistedToken.objects.filter(token__jti=payload.get("jti")).first()
+        if not entry or entry.blacklisted_at < window:
+            return None
+        user = User.objects.filter(pk=payload.get("user_id"), is_active=True).first()
+        # Logout, password change/reset and consent withdrawal stamp
+        # sessions_revoked_at; a token rotated before that never comes back.
+        if user is None or (user.sessions_revoked_at and user.sessions_revoked_at >= entry.blacklisted_at):
+            return None
+        return user
 
 
 class LogoutView(PublicView):
@@ -289,8 +329,10 @@ class LogoutView(PublicView):
         raw = read_refresh_token(request)
         if raw:
             try:
-                RefreshToken(raw).blacklist()
-            except TokenError:
+                token = RefreshToken(raw)
+                token.blacklist()
+                User.objects.filter(pk=token["user_id"]).update(sessions_revoked_at=timezone.now())
+            except (TokenError, KeyError):
                 pass  # already expired or revoked — logging out is still a success
 
         response = Response({"message": "Logout ho gaya."})

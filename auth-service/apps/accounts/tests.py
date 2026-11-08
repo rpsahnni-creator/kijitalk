@@ -115,6 +115,7 @@ class RegisterAndLoginTests(AuthTestCase):
 
 
 class RefreshAndLogoutTests(AuthTestCase):
+    @override_settings(REFRESH_REUSE_GRACE_SECONDS=0)
     def test_refresh_rotates_and_old_token_cannot_be_reused(self):
         self.register(**WEB)
         old_cookie = self.client.cookies[settings.REFRESH_COOKIE_NAME].value
@@ -124,6 +125,24 @@ class RefreshAndLogoutTests(AuthTestCase):
         self.assertIn("access", res.data)
         self.assertNotEqual(self.client.cookies[settings.REFRESH_COOKIE_NAME].value, old_cookie)
 
+        replay = APIClient()
+        replay.cookies[settings.REFRESH_COOKIE_NAME] = old_cookie
+        self.assertEqual(replay.post("/api/auth/token/refresh/", {}, format="json", **WEB).status_code, 401)
+
+    def test_just_rotated_token_works_within_grace_window(self):
+        # Two tabs refreshing at once, or a lost response, must not log the learner out.
+        self.register(**WEB)
+        old_cookie = self.client.cookies[settings.REFRESH_COOKIE_NAME].value
+        self.assertEqual(self.refresh(**WEB).status_code, 200)
+        other_tab = APIClient()
+        other_tab.cookies[settings.REFRESH_COOKIE_NAME] = old_cookie
+        self.assertEqual(other_tab.post("/api/auth/token/refresh/", {}, format="json", **WEB).status_code, 200)
+
+    def test_grace_window_never_survives_logout(self):
+        self.register(**WEB)
+        old_cookie = self.client.cookies[settings.REFRESH_COOKIE_NAME].value
+        self.assertEqual(self.refresh(**WEB).status_code, 200)  # rotates old_cookie
+        self.client.post("/api/auth/logout/", {}, format="json", **WEB)
         replay = APIClient()
         replay.cookies[settings.REFRESH_COOKIE_NAME] = old_cookie
         self.assertEqual(replay.post("/api/auth/token/refresh/", {}, format="json", **WEB).status_code, 401)
@@ -389,3 +408,31 @@ class AccountDataTests(AuthTestCase):
         self.authed()
         res = self.client.post("/api/auth/account/delete/", {"password": GOOD_PASSWORD, "confirm": "DELETE"}, format="json")
         self.assertEqual(res.status_code, 503)
+
+
+@override_settings(INTERNAL_API_KEY="k" * 40)
+class InternalInviteTests(AuthTestCase):
+    def test_invite_requires_the_key(self):
+        res = self.client.post("/internal/accounts/invite/", {"email": "s@example.com"}, format="json")
+        self.assertEqual(res.status_code, 403)
+        wrong = self.client.post("/internal/accounts/invite/", {"email": "s@example.com"}, format="json", HTTP_X_INTERNAL_KEY="x" * 40)
+        self.assertEqual(wrong.status_code, 403)
+        self.assertFalse(User.objects.filter(email="s@example.com").exists())
+
+    def test_invite_creates_login_and_sends_set_password_email(self):
+        res = self.client.post(
+            "/internal/accounts/invite/",
+            {"email": "Student@Example.com", "display_name": "Ravi"},
+            format="json",
+            HTTP_X_INTERNAL_KEY="k" * 40,
+        )
+        self.assertEqual(res.status_code, 201)
+        user = User.objects.get(email="student@example.com")
+        self.assertFalse(user.has_usable_password())
+        self.assertEqual(user.access_gate, "setup")  # Terms/age asked on first sign-in
+        self.assertIn("/reset-password?uid=", mail.outbox[0].body)
+
+        again = self.client.post(
+            "/internal/accounts/invite/", {"email": "student@example.com"}, format="json", HTTP_X_INTERNAL_KEY="k" * 40
+        )
+        self.assertEqual(again.data, {"created": False})

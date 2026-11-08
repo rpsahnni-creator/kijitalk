@@ -28,6 +28,7 @@ export default function TabLayout() {
   }
 
   return (
+    <>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: BRAND.crimson,
@@ -48,5 +49,6 @@ export default function TabLayout() {
         />
       ))}
     </Tabs>
+    </>
   );
 }

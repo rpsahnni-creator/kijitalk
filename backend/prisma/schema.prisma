@@ -100,6 +100,15 @@ model User {
   // away; the row stays only so payment/invoice records required by GST law
   // keep a valid owner.
   deletedAt    DateTime?
+
+  // Placement test result (spoken + written), used to set targetLevel.
+  placementScore Int?
+  placementAt    DateTime?
+
+  // Premium granted through a school licence (B2B), kept denormalised so
+  // usage checks stay synchronous. Refreshed when the learner joins a class
+  // or the school's licence changes.
+  schoolLicenseUntil DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -109,6 +118,9 @@ model User {
   payments      Payment[]
   subscriptions Subscription[]
   invoices      Invoice[]
+  schoolRoles   SchoolStaff[]
+  classesTaught Classroom[]   @relation("ClassTeacher")
+  memberships   ClassMember[]
 
   @@map("users")
 }
@@ -155,7 +167,15 @@ model MistakeLog {
   embedding Float[]  @default([])
   createdAt DateTime @default(now())
 
+  // Spaced repetition (Leitner boxes 0–5): a correct review moves the card up
+  // a box and further out in time; a miss sends it back to box 0.
+  box            Int       @default(0)
+  nextReviewAt   DateTime  @default(now())
+  lastReviewedAt DateTime?
+  reviewCount    Int       @default(0)
+
   @@index([userId, createdAt])
+  @@index([userId, nextReviewAt])
   @@map("mistake_logs")
 }
 
@@ -310,4 +330,81 @@ model AiUsageLog {
   @@index([createdAt])
   @@index([provider, createdAt])
   @@map("ai_usage_logs")
+}
+
+// ── Schools (B2B) ──────────────────────────────────────────────────────────
+
+model School {
+  id               String    @id @default(cuid())
+  name             String
+  city             String?
+  state            String?
+  contactEmail     String?
+  gstin            String?
+  seats            Int       @default(0)
+  licenseExpiresAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  staff      SchoolStaff[]
+  classrooms Classroom[]
+
+  @@map("schools")
+}
+
+model SchoolStaff {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("teacher") // "owner" | "teacher"
+  createdAt DateTime @default(now())
+
+  @@unique([schoolId, userId])
+  @@map("school_staff")
+}
+
+model Classroom {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   User     @relation("ClassTeacher", fields: [teacherId], references: [id])
+  name      String
+  grade     String?
+  joinCode  String   @unique
+  createdAt DateTime @default(now())
+
+  members     ClassMember[]
+  assignments Assignment[]
+
+  @@index([schoolId])
+  @@map("classrooms")
+}
+
+model ClassMember {
+  id          String    @id @default(cuid())
+  classroomId String
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt    DateTime  @default(now())
+
+  @@unique([classroomId, userId])
+  @@index([userId])
+  @@map("class_members")
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  classroomId String
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  lessonId    String
+  note        String?
+  dueAt       DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([classroomId])
+  @@map("assignments")
 }

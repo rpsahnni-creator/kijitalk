@@ -149,3 +149,19 @@ export async function getAiUsageStats(hours: number) {
     topErrors: recentErrors.map((r) => ({ provider: r.provider, error: r.error, count: r._count._all })),
   };
 }
+
+/** Startup self-test result: updates health without writing a usage row. */
+export function markProviderCheck(provider: 'gemini' | 'claude', ok: boolean, error?: unknown): void {
+  const h = health[provider];
+  if (ok) {
+    h.lastSuccessAt = new Date().toISOString();
+    h.consecutiveFailures = 0;
+    h.pausedUntil = null;
+    return;
+  }
+  h.lastErrorAt = new Date().toISOString();
+  h.lastError = describeAiError(error);
+  if (h.lastError === 'Invalid or missing API key') {
+    h.pausedUntil = new Date(Date.now() + AUTH_ERROR_PAUSE_MS).toISOString();
+  }
+}

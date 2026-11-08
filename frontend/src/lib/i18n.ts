@@ -62,3 +62,16 @@ export const LEVELS = [
   { value: 'intermediate', label: 'Intermediate / मध्यम', desc: 'Thoda English aata hai' },
   { value: 'advanced', label: 'Advanced / उन्नत', desc: 'Fluent hone ke paas' },
 ];
+
+/** Home languages Kiki can teach from — the AI tutor and voice input follow this. */
+export const HOME_LANGUAGES = [
+  { value: 'hi', label: 'हिंदी · Hindi', speech: 'hi-IN' },
+  { value: 'ta', label: 'தமிழ் · Tamil', speech: 'ta-IN' },
+  { value: 'bn', label: 'বাংলা · Bengali', speech: 'bn-IN' },
+  { value: 'mr', label: 'मराठी · Marathi', speech: 'mr-IN' },
+  { value: 'te', label: 'తెలుగు · Telugu', speech: 'te-IN' },
+] as const;
+
+export function speechLangFor(code: string | null | undefined): string {
+  return HOME_LANGUAGES.find((l) => l.value === code)?.speech ?? 'hi-IN';
+}

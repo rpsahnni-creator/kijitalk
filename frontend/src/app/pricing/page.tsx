@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
+import Link from 'next/link';
 import { Check, Crown, ShieldCheck, Sparkles } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ErrorState } from '@/components/ui';
 import { useAuthStore } from '@/stores/useStore';
 import { api, ApiError } from '@/lib/api';
+import { track } from '@/lib/analytics';
 
 interface PlanDef {
   id: 'free' | 'premium';
@@ -22,19 +24,29 @@ interface SubscriptionStatus {
   expiresAt: string | null;
   paymentsEnabled: boolean;
   plans: Record<'free' | 'premium', PlanDef>;
+  subscription: { status: string; currentEnd: string | null; cancelAtPeriodEnd: boolean } | null;
 }
 
-interface CheckoutOrder {
-  orderId: string;
-  amount: number;
-  currency: string;
+interface SubscriptionCheckout {
+  subscriptionId: string;
   keyId: string;
   name: string;
   description: string;
 }
 
+interface InvoiceSummary {
+  id: string;
+  number: string;
+  issuedAt: string;
+  totalPaise: number;
+}
+
+const inr = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+const longDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
 interface RazorpaySuccessResponse {
-  razorpay_order_id: string;
+  razorpay_subscription_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
 }
@@ -64,30 +76,43 @@ export default function PricingPage() {
 
   useEffect(loadStatus, [loadStatus]);
 
+  const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
+  const [cancelling, setCancelling] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!token) return;
+    setStatus(await api.get<SubscriptionStatus>('/api/subscription/status', token));
+    const { invoices: list } = await api.get<{ invoices: InvoiceSummary[] }>('/api/subscription/invoices', token);
+    setInvoices(list);
+  }, [token]);
+
+  useEffect(() => {
+    if (token) void refresh().catch(() => {});
+  }, [token, refresh]);
+
   const upgrade = async () => {
     if (!token || !scriptReady) return;
+    track('upgrade_clicked');
     setMessage('');
     setPaying(true);
     try {
-      const order = await api.post<CheckoutOrder>('/api/subscription/checkout', {}, token);
+      const checkout = await api.post<SubscriptionCheckout>('/api/subscription/subscribe', {}, token);
       const rzp = new window.Razorpay({
-        key: order.keyId,
-        amount: order.amount,
-        currency: order.currency,
-        name: order.name,
-        description: order.description,
-        order_id: order.orderId,
+        key: checkout.keyId,
+        subscription_id: checkout.subscriptionId,
+        name: checkout.name,
+        description: checkout.description,
         prefill: { name: profile?.displayName, email: profile?.email },
         theme: { color: '#dc143c' },
         handler: async (response: RazorpaySuccessResponse) => {
           try {
             await api.post('/api/subscription/verify', response, token);
-            setMessage('Premium activate ho gaya! Unlimited practice ka maza lo. 🎉');
-            const updated = await api.get<SubscriptionStatus>('/api/subscription/status', token);
-            setStatus(updated);
+            track('premium_subscribed');
+            setMessage('Premium activate ho gaya! Har mahine apne aap renew hoga. Receipt aapke email pe aa jayegi. 🎉');
+            await refresh();
             await syncProfile();
           } catch {
-            setMessage('Payment ho gaya, lekin activate nahi ho paya. Thodi der mein phir try karo.');
+            setMessage('Payment ho gaya, lekin activate hone mein thoda time lag raha hai. 1–2 minute mein page refresh karo.');
           } finally {
             setPaying(false);
           }
@@ -98,6 +123,21 @@ export default function PricingPage() {
     } catch (err) {
       setMessage(err instanceof ApiError ? err.message : 'Checkout start nahi ho saka. Try again.');
       setPaying(false);
+    }
+  };
+
+  const cancel = async () => {
+    if (!token) return;
+    if (!window.confirm('Renewal band karna hai? Premium paid period ke end tak chalta rahega.')) return;
+    setCancelling(true);
+    try {
+      const { message: msg } = await api.post<{ message: string }>('/api/subscription/cancel', {}, token);
+      setMessage(msg);
+      await refresh();
+    } catch (err) {
+      setMessage(err instanceof ApiError ? err.message : 'Cancel nahi ho paya.');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -199,14 +239,50 @@ export default function PricingPage() {
             ) : (
               <div className="relative rounded-xl bg-white/15 px-5 py-3 text-center text-sm font-semibold">Active ✓</div>
             )}
+            {isPremium && status.subscription && !status.subscription.cancelAtPeriodEnd && (
+              <button
+                type="button"
+                onClick={cancel}
+                disabled={cancelling}
+                className="relative mt-3 w-full text-center text-xs font-medium text-brand-100 underline hover:text-white"
+              >
+                {cancelling ? 'Cancel ho raha hai…' : 'Auto-renew band karo'}
+              </button>
+            )}
+            {isPremium && status.subscription?.cancelAtPeriodEnd && status.subscription.currentEnd && (
+              <p className="relative mt-2 text-center text-xs text-brand-100">
+                Renewal band hai · Premium {longDate(status.subscription.currentEnd)} tak
+              </p>
+            )}
             {!status.paymentsEnabled && !isPremium && (
               <p className="relative mt-2 text-center text-xs text-brand-100">Payments abhi setup ho rahe hain</p>
             )}
           </div>
         </div>
 
+        {invoices.length > 0 && (
+          <section className="mt-10">
+            <h2 className="section-title">Invoices · GST receipts</h2>
+            <div className="card divide-y divide-slate-100 p-0 dark:divide-slate-800">
+              {invoices.map((inv) => (
+                <Link
+                  key={inv.id}
+                  href={`/invoices/${inv.id}`}
+                  className="flex items-center justify-between px-5 py-3 text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                >
+                  <span>
+                    <span className="font-semibold">{inv.number}</span>
+                    <span className="ml-2 text-slate-500">{longDate(inv.issuedAt)}</span>
+                  </span>
+                  <span className="font-semibold">{inr(inv.totalPaise)}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         <p className="mt-8 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-          <ShieldCheck size={14} /> Secure payments via Razorpay · UPI, cards, netbanking
+          <ShieldCheck size={14} /> Secure payments via Razorpay · UPI, cards, netbanking · Har mahine auto-renew, kabhi bhi cancel
         </p>
       </div>
     </AppShell>

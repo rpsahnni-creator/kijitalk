@@ -19,4 +19,11 @@ describe('gateBlocks (Terms + parental consent gate)', () => {
     expect(gateBlocks('parent_denied', '/api/account/export?download=1')).toBe(false);
     expect(gateBlocks('setup', '/api/auth/meow')).toBe(true);
   });
+
+  it('collects no new personal data before consent (writes are blocked)', () => {
+    expect(gateBlocks('parent_pending', '/api/auth/me', 'PATCH')).toBe(true);
+    expect(gateBlocks('setup', '/api/auth/me', 'PATCH')).toBe(true);
+    expect(gateBlocks('parent_pending', '/api/auth/me', 'GET')).toBe(false);
+    expect(gateBlocks('ok', '/api/auth/me', 'PATCH')).toBe(false);
+  });
 });
