@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useTutorStore } from '@/stores/tutorStore';
 import { api, ApiError, TutorEngines } from '@/lib/api';
 import { speechService } from '@/lib/speech';
+import { MicButton } from '@/components/MicButton';
 
 // Expo managed workflow has no built-in speech-to-text (expo-speech is
 // TTS-only). Rather than fake "listening", this screen is a typed
@@ -26,12 +27,12 @@ export default function CallScreen() {
       .get<TutorEngines>('/api/chat/engines')
       .then((d) => setClaudeAvailable(d.claude))
       .catch(() => setClaudeAvailable(false));
-    speechService.speak("Hi! I'm Kiki. Type in Hindi or English and I'll speak my reply back to you.");
+    speechService.speak("Hi! I'm Kiki. Tap the mic and talk to me, or type in Hindi or English. I'll speak my reply back to you.");
   }, [setClaudeAvailable]);
 
-  const send = async () => {
-    if (!input.trim() || !token || loading) return;
-    const msg = input.trim();
+  const send = async (spoken?: string) => {
+    const msg = (spoken ?? input).trim();
+    if (!msg || !token || loading) return;
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: msg }]);
     setLoading(true);
@@ -73,7 +74,7 @@ export default function CallScreen() {
       <ScrollView ref={scrollRef} className="flex-1 px-4 pt-3" contentContainerStyle={{ paddingBottom: 16 }}>
         {messages.length === 0 && (
           <View className="mt-16 items-center">
-            <Ionicons name="mic-circle" size={64} color="#952248" />
+            <Ionicons name="mic-circle" size={64} color="#dc143c" />
             <Text className="mt-4 text-center text-slate-500">
               Type Hindi ya English mein — Kiki apni reply bolkar sunayegi!
             </Text>
@@ -93,15 +94,16 @@ export default function CallScreen() {
         ))}
       </ScrollView>
 
-      <View className="flex-row gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+      <View className="flex-row items-center gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+        <MicButton onText={(t) => void send(t)} onPartial={(t) => setInput(t)} disabled={loading} />
         <TextInput
           value={input}
           onChangeText={setInput}
-          onSubmitEditing={send}
+          onSubmitEditing={() => void send()}
           placeholder="Hindi ya English mein likho..."
           className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-600 dark:text-white"
         />
-        <TouchableOpacity onPress={send} disabled={loading || !input.trim()} className="justify-center rounded-2xl bg-brand-600 px-5">
+        <TouchableOpacity onPress={() => void send()} disabled={loading || !input.trim()} className="justify-center rounded-2xl bg-brand-600 px-5">
           <Text className="font-semibold text-white">Send</Text>
         </TouchableOpacity>
       </View>

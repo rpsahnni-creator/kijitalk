@@ -2,21 +2,46 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "auth-service",
+      "runtimeExecutable": "auth-service/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "auth-service/manage.py",
+        "runserver",
+        "8100"
+      ],
+      "port": 8100
+    },
+    {
       "name": "backend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "backend"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "backend"
+      ],
       "port": 4001
     },
     {
       "name": "frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "frontend"
+      ],
       "port": 3100
     },
     {
       "name": "mobile-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "web", "--prefix", "mobile"],
+      "runtimeArgs": [
+        "run",
+        "web",
+        "--prefix",
+        "mobile"
+      ],
       "port": 8081
     }
   ]

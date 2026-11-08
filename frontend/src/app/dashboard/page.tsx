@@ -3,20 +3,41 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Flame, Clock, BookOpen, Target, MessageCircle, Mic, Users, Volume2, Sparkles } from 'lucide-react';
+import { ArrowRight, Clock, Coins, Flame, Star, Volume2 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { KikiAvatar } from '@/components/KikiAvatar';
+import { FeatureIcon, type FeatureIconName } from '@/components/FeatureIcon';
+import { FeatureTile, SectionTitle, Skeleton } from '@/components/ui';
+import { EmailVerifyBanner } from '@/components/EmailVerifyBanner';
+import { MyClassSection } from '@/components/MyClassSection';
 import { useAuthStore } from '@/stores/useStore';
 import { api, Lesson, DashboardData } from '@/lib/api';
 import { speechService } from '@/lib/speech';
 import { t } from '@/lib/i18n';
+
+interface Tile {
+  href: string;
+  icon: FeatureIconName;
+  label: string;
+  badge?: number | string | null;
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export default function DashboardPage() {
   const { user, token, profile, initialized } = useAuthStore();
   const router = useRouter();
   const [dailyLesson, setDailyLesson] = useState<Lesson | null>(null);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [reviewDue, setReviewDue] = useState(0);
+  const [isTeacher, setIsTeacher] = useState(false);
 
   useEffect(() => {
     if (initialized && !user) router.replace('/login');
@@ -30,142 +51,201 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!token) return;
-    api.get<{ lesson: Lesson }>('/api/lessons/daily', token).then((d) => setDailyLesson(d.lesson)).catch(console.error);
-    api.get<DashboardData>('/api/progress/dashboard', token).then(setDashboard).catch(console.error);
+    Promise.allSettled([
+      api.get<{ lesson: Lesson }>('/api/lessons/daily', token).then((d) => setDailyLesson(d.lesson)),
+      api.get<DashboardData>('/api/progress/dashboard', token).then(setDashboard),
+      api.get<{ due: number }>('/api/review/stats', token).then((r) => setReviewDue(r.due)),
+      api.get<{ schools: unknown[] }>('/api/school/me', token).then((r) => setIsTeacher(r.schools.length > 0)),
+    ]).finally(() => setLoaded(true));
   }, [token]);
 
   if (!initialized || !user) return <LoadingScreen />;
 
-  const todayMinutes = dashboard?.stats.todayMinutes ?? 0;
-  const dailyGoal = dashboard?.stats.dailyGoal ?? profile?.settings.dailyGoalMinutes ?? 15;
+  const stats = dashboard?.stats;
+  const todayMinutes = stats?.todayMinutes ?? 0;
+  const dailyGoal = Math.max(1, stats?.dailyGoal ?? profile?.settings?.dailyGoalMinutes ?? 15);
   const goalPercent = Math.min(100, Math.round((todayMinutes / dailyGoal) * 100));
+  const streak = stats?.streak ?? profile?.streak ?? 0;
+  const firstName = profile?.displayName?.split(' ')[0] ?? 'Student';
+  const earnedBadges = stats?.badges?.length ?? 0;
 
-  const quickActions = [
-    { href: '/chat', icon: MessageCircle, label: 'Kiki se baat', sub: 'Hindi → English', color: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' },
-    { href: '/voice', icon: Mic, label: 'Bol kar seekho', sub: 'Pronunciation', color: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' },
-    { href: '/roleplay', icon: Users, label: 'Roleplay', sub: 'Real situations', color: 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300' },
-    { href: '/lessons', icon: BookOpen, label: 'Lessons', sub: 'School & daily life', color: 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300' },
+  const sections: Array<{ title: string; tiles: Tile[] }> = [
+    {
+      title: 'Practice · प्रैक्टिस',
+      tiles: [
+        { href: '/chat', icon: 'chat', label: 'Kiki Chat' },
+        { href: '/call', icon: 'call', label: 'Call Kiki' },
+        { href: '/voice', icon: 'voice', label: 'Voice' },
+        { href: '/roleplay', icon: 'roleplay', label: 'Roleplay' },
+        { href: '/debate', icon: 'debate', label: 'Debate' },
+      ],
+    },
+    {
+      title: 'Learn · सीखो',
+      tiles: [
+        { href: dailyLesson ? `/lessons/${dailyLesson.id}` : '/lessons', icon: 'calendar', label: 'Aaj ka Lesson', badge: dailyLesson ? 'New' : null },
+        { href: '/lessons', icon: 'lessons', label: 'Lessons' },
+        { href: '/courses', icon: 'courses', label: 'Courses' },
+        { href: '/review', icon: 'idea', label: 'Revision', badge: reviewDue || null },
+        { href: '/placement', icon: 'badges', label: 'Level test', badge: profile?.placementAt ? null : 'Naya' },
+        { href: '#phrase', icon: 'idea', label: 'Daily Phrase' },
+      ],
+    },
+    {
+      title: 'My Progress · प्रगति',
+      tiles: [
+        { href: '/progress', icon: 'progress', label: 'Progress' },
+        { href: '/progress#leaderboard', icon: 'leaderboard', label: 'Leaderboard' },
+        { href: '/progress#badges', icon: 'badges', label: 'Badges', badge: earnedBadges || null },
+        { href: '/progress', icon: 'streak', label: 'Streak', badge: streak || null },
+      ],
+    },
+    {
+      title: 'Account · अकाउंट',
+      tiles: [
+        { href: '/settings', icon: 'profile', label: 'Profile' },
+        { href: '/pricing', icon: 'premium', label: 'Premium' },
+        { href: '/settings', icon: 'settings', label: 'Settings' },
+        ...(isTeacher ? [{ href: '/school', icon: 'courses' as const, label: 'Teacher' }] : []),
+        { href: '/chat', icon: 'help', label: 'Need Help' },
+      ],
+    },
   ];
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl p-6">
-        <header className="mb-8">
-          <p className="text-sm font-medium text-brand-600">{t('freeForStudents')}</p>
-          <h1 className="text-2xl font-bold">
-            Namaste, {profile?.displayName ?? 'Student'} 👋
-          </h1>
-          <p className="text-slate-500">
-            {profile?.grade ? `Class ${profile.grade}` : 'Student'}
-            {profile?.state ? ` · ${profile.state}` : ''} — {t('dashboardGreeting')}
-          </p>
-        </header>
-
-        <div className="card mb-6">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="font-semibold">{t('practiceGoal')}</p>
-            <span className="text-sm text-slate-500">{todayMinutes}/{dailyGoal} min</span>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-            <div className="h-full rounded-full gradient-hero transition-all" style={{ width: `${goalPercent}%` }} />
-          </div>
-          {goalPercent >= 100 && (
-            <p className="mt-2 text-sm text-success-600">Shabash! Aaj ka goal complete! 🎉</p>
-          )}
-        </div>
-
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { icon: Flame, label: 'Streak', value: `${dashboard?.stats.streak ?? profile?.streak ?? 0} din`, color: 'text-accent-500' },
-            { icon: Clock, label: 'Aaj', value: `${todayMinutes} min`, color: 'text-brand-500' },
-            { icon: BookOpen, label: 'Lessons', value: dashboard?.stats.lessonsCompleted ?? profile?.lessonsCompleted ?? 0, color: 'text-brand-500' },
-            { icon: Target, label: 'Level', value: `Lv.${dashboard?.stats.level ?? 1}`, color: 'text-accent-500' },
-          ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="card flex items-center gap-4">
-              <div className={`rounded-2xl bg-slate-100 p-3 dark:bg-slate-700 ${color}`}>
-                <Icon size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">{label}</p>
-                <p className="text-xl font-bold">{value}</p>
-              </div>
+      <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6 lg:py-8">
+        {/* Welcome card */}
+        <section className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 p-5 text-white shadow-lg shadow-brand-900/25 sm:p-7">
+          <span className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
+          <span className="pointer-events-none absolute right-8 top-6 h-4 w-4 rounded-full bg-accent-400" />
+          <span className="pointer-events-none absolute -bottom-8 -left-8 h-20 w-20 rounded-full bg-leaf-700" />
+          <div className="relative flex items-center gap-4">
+            <div className="rounded-full bg-white p-1 shadow-lg">
+              <KikiAvatar size="lg" />
             </div>
-          ))}
-        </div>
-
-        {(dashboard?.stats.xp !== undefined || dashboard?.stats.coins !== undefined) && (
-          <div className="mb-6 flex flex-wrap gap-3">
-            <span className="rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700 dark:bg-brand-900/30">
-              ⭐ {dashboard?.stats.xp ?? 0} XP
-            </span>
-            <span className="rounded-full bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700 dark:bg-accent-900/30">
-              🪙 {dashboard?.stats.coins ?? 0} Coins
-            </span>
-            <Link href="/progress" className="rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700">
-              🏆 Leaderboard →
-            </Link>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-brand-100">
+                {greeting()} · {profile?.grade ? (profile.grade === 'college' ? 'College' : `Class ${profile.grade}`) : 'Student'}
+                {profile?.state ? ` · ${profile.state}` : ''}
+              </p>
+              <h1 className="truncate font-display text-2xl font-bold sm:text-3xl">
+                Namaste, <span className="text-accent-300">{firstName}</span> 👋
+              </h1>
+            </div>
           </div>
-        )}
 
-        {dashboard?.dailyPhrase && (
-          <div className="card mb-6 border-accent-100 bg-gradient-to-r from-accent-50 to-brand-50 dark:from-accent-950/30 dark:to-brand-950/30">
-            <div className="mb-2 flex items-center gap-2 text-accent-600">
-              <Sparkles size={16} />
-              <span className="text-sm font-semibold">{t('dailyPhrase')}</span>
-              <span className="rounded-full bg-accent-100 px-2 py-0.5 text-xs dark:bg-accent-900/40">
-                {dashboard.dailyPhrase.category}
+          <div className="relative mt-5">
+            <div className="mb-1.5 flex items-center justify-between text-sm">
+              <span className="font-semibold">{t('practiceGoal')}</span>
+              <span className="text-brand-100">
+                {todayMinutes}/{dailyGoal} min
               </span>
             </div>
-            <p className="text-lg font-semibold">{dashboard.dailyPhrase.english}</p>
-            <p className="text-sm text-slate-500">{dashboard.dailyPhrase.hindi}</p>
-            <p className="mt-2 text-xs text-accent-600">{dashboard.dailyPhrase.tip}</p>
-            <button
-              onClick={() => speechService.speak(dashboard.dailyPhrase!.english)}
-              className="mt-3 inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"
+            <div className="h-3 overflow-hidden rounded-full bg-white/20">
+              <div className="h-full rounded-full bg-accent-400 transition-all duration-700" style={{ width: `${goalPercent}%` }} />
+            </div>
+            <p className="mt-2 text-sm text-brand-50">
+              {goalPercent >= 100
+                ? 'Shabash! Aaj ka goal complete ho gaya 🎉'
+                : `Aaj ${Math.max(0, dailyGoal - todayMinutes)} min aur practice karo — goal poora karo!`}
+            </p>
+          </div>
+
+          <div className="relative mt-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold">
+              <Flame size={15} className="text-accent-300" /> {streak} din
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold">
+              <Star size={15} className="text-accent-300" /> {stats?.xp ?? 0} XP · Lv.{stats?.level ?? 1}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold">
+              <Coins size={15} className="text-accent-300" /> {stats?.coins ?? 0}
+            </span>
+            <Link
+              href={dailyLesson ? `/lessons/${dailyLesson.id}` : '/lessons'}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-accent-400 px-4 py-2 text-sm font-bold text-brand-900 shadow-sm transition hover:bg-accent-300"
             >
-              <Volume2 size={14} /> Suno aur repeat karo
-            </button>
-          </div>
-        )}
-
-        <Link
-          href="/chat"
-          className="card mb-8 flex items-center gap-4 transition hover:scale-[1.01] hover:shadow-lg"
-        >
-          <KikiAvatar size="lg" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-accent-600 dark:text-accent-300">AI Tutor · Free</p>
-            <h2 className="text-lg font-bold">Kiki se baat karo</h2>
-            <p className="text-sm text-slate-500">Hindi mein likho ya bolo — English seekho!</p>
-          </div>
-          <span className="rounded-2xl bg-accent-100 px-4 py-2 text-sm font-semibold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">
-            Chat →
-          </span>
-        </Link>
-
-        {dailyLesson && (
-          <div className="card mb-8 gradient-hero text-white">
-            <p className="mb-1 text-sm text-accent-200">Aaj ka Lesson</p>
-            <h2 className="mb-2 text-xl font-bold">{dailyLesson.title}</h2>
-            <p className="mb-4 text-accent-100">{dailyLesson.description}</p>
-            <Link href={`/lessons/${dailyLesson.id}`} className="inline-flex rounded-2xl bg-white px-5 py-2.5 text-sm font-semibold text-brand-700">
-              {t('startLesson')} · {dailyLesson.durationMinutes} min
+              Practice shuru karo <ArrowRight size={16} />
             </Link>
           </div>
-        )}
+        </section>
 
-        <h2 className="mb-4 text-lg font-semibold">{t('quickActions')}</h2>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {quickActions.map(({ href, icon: Icon, label, sub, color }) => (
-            <Link key={href} href={href} className="card flex flex-col items-center gap-2 py-6 transition hover:scale-[1.02]">
-              <div className={`rounded-2xl p-4 ${color}`}>
-                <Icon size={28} />
+        <EmailVerifyBanner />
+        <MyClassSection />
+
+        {/* Icon grid sections */}
+        {sections.map((section) => (
+          <section key={section.title} className="mb-6">
+            <SectionTitle>{section.title}</SectionTitle>
+            <div className="grid grid-cols-4 gap-x-1 gap-y-2 sm:grid-cols-5 lg:grid-cols-6">
+              {section.tiles.map((tile) => (
+                <FeatureTile key={tile.label} {...tile} />
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {/* Today */}
+        <section className="mb-4 grid gap-4 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <SectionTitle>Aaj ka Lesson</SectionTitle>
+            {dailyLesson ? (
+              <Link href={`/lessons/${dailyLesson.id}`} className="card card-interactive group flex items-start gap-4">
+                <FeatureIcon name="lessons" size={56} />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                    <span className="chip bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">{dailyLesson.category}</span>
+                    <span className="chip bg-leaf-50 capitalize text-leaf-700 dark:bg-leaf-950/50 dark:text-leaf-300">{dailyLesson.level}</span>
+                    <span className="chip bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <Clock size={11} /> {dailyLesson.durationMinutes} min
+                    </span>
+                  </div>
+                  <h3 className="font-display text-lg font-bold group-hover:text-brand-700 dark:group-hover:text-brand-300">{dailyLesson.title}</h3>
+                  <p className="mt-1 text-sm text-slate-500">{dailyLesson.description}</p>
+                  <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 dark:text-brand-300">
+                    {t('startLesson')} <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              </Link>
+            ) : loaded ? (
+              <Link href="/lessons" className="card card-interactive flex items-center gap-4">
+                <FeatureIcon name="lessons" size={48} />
+                <div className="flex-1">
+                  <p className="font-semibold">Lessons browse karo</p>
+                  <p className="text-sm text-slate-500">500+ lessons — school, exams, daily life</p>
+                </div>
+                <ArrowRight className="text-brand-600" size={18} />
+              </Link>
+            ) : (
+              <Skeleton className="h-36 rounded-2xl" />
+            )}
+          </div>
+
+          <div id="phrase" className="scroll-mt-20 lg:col-span-2">
+            <SectionTitle>{t('dailyPhrase')}</SectionTitle>
+            {dashboard?.dailyPhrase ? (
+              <div className="card border-accent-300 bg-gradient-to-br from-accent-50 to-white dark:border-accent-900/50 dark:from-accent-950/30 dark:to-slate-900">
+                <div className="mb-2 flex items-center gap-2">
+                  <FeatureIcon name="idea" size={32} />
+                  <span className="chip bg-leaf-700 text-white">{dashboard.dailyPhrase.category}</span>
+                </div>
+                <p className="font-display text-lg font-semibold leading-snug">{dashboard.dailyPhrase.english}</p>
+                <p className="mt-1 text-sm text-slate-500">{dashboard.dailyPhrase.hindi}</p>
+                <p className="mt-2 text-xs text-slate-500">💡 {dashboard.dailyPhrase.tip}</p>
+                <button
+                  type="button"
+                  onClick={() => speechService.speak(dashboard.dailyPhrase!.english)}
+                  className="btn-primary mt-4 w-full py-2"
+                >
+                  <Volume2 size={16} /> Suno aur repeat karo
+                </button>
               </div>
-              <span className="font-medium">{label}</span>
-              <span className="text-xs text-slate-400">{sub}</span>
-            </Link>
-          ))}
-        </div>
+            ) : (
+              <Skeleton className="h-36 rounded-2xl" />
+            )}
+          </div>
+        </section>
       </div>
     </AppShell>
   );

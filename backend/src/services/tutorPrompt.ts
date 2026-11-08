@@ -45,7 +45,8 @@ export function offlineKikiResponse(message: string): ChatResponse {
       ? "Namaste! I'm Kiki. The AI service is busy right now — please try again in a minute. Meanwhile, keep practicing English every day!"
       : "Hi! I'm Kiki. The AI service is temporarily busy. Please try again in a minute!",
     corrections: [],
-    translation: wasHindi ? 'Translation will appear when AI service is available.' : null,
+    // No real translation is available offline — don't show a placeholder as if it were one.
+    translation: null,
     wasHindi,
     teachingTip: null,
   };

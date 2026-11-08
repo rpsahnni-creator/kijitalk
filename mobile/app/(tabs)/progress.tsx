@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AppHeader, BrandFooter } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import { api, DashboardData, LeaderboardEntry } from '@/lib/api';
 import { BADGES } from '@/lib/badges';
@@ -53,8 +54,11 @@ export default function ProgressScreen() {
   const totalActivities = Math.max(1, activityBreakdown.reduce((s, a) => s + a.count, 0));
 
   return (
-    <ScrollView className="flex-1 bg-slate-50 px-6 pt-14 dark:bg-slate-900" contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text className="mb-1 text-xl font-bold text-slate-900 dark:text-white">Progress</Text>
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <AppHeader title="Progress" />
+      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
+      <View className="px-6 pt-5 pb-8">
+      <Text className="mb-1 text-xl font-bold text-leaf-700 dark:text-leaf-400">Meri Progress · प्रगति</Text>
       <Text className="mb-6 text-slate-500">Pichle 30 din ki learning journey</Text>
 
       <View className="mb-6 flex-row flex-wrap gap-3">
@@ -122,7 +126,7 @@ export default function ProgressScreen() {
         {(data?.recentActivity ?? []).map((item) => (
           <View key={item.id} className="mb-2 flex-row items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5 dark:bg-slate-700">
             <View className="h-9 w-9 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30">
-              <Ionicons name={ACTIVITY_ICONS[item.activityType] ?? 'chatbubbles'} size={16} color="#741b38" />
+              <Ionicons name={ACTIVITY_ICONS[item.activityType] ?? 'chatbubbles'} size={16} color="#b80d30" />
             </View>
             <View className="flex-1">
               <Text className="font-medium text-slate-900 dark:text-white">{ACTIVITY_LABELS[item.activityType] ?? item.activityType}</Text>
@@ -156,6 +160,10 @@ export default function ProgressScreen() {
           <View className="h-full rounded-full bg-brand-600" style={{ width: `${Math.min(100, (todayMinutes / dailyGoal) * 100)}%` }} />
         </View>
       </View>
+    </View>
+      <View className="flex-1" />
+      <BrandFooter />
     </ScrollView>
+    </View>
   );
 }

@@ -2,7 +2,7 @@
   "name": "kijitalk",
   "version": "1.0.0",
   "private": true,
-  "description": "KijiTalk — English speaking practice app (monorepo)",
+  "description": "KijiTalk \u2014 English speaking practice app (monorepo)",
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
@@ -16,6 +16,8 @@
     "build:backend": "npm run build --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
     "test:backend": "npm test --prefix backend",
-    "setup:env": "node scripts/setup-env.js"
+    "setup:env": "node scripts/setup-env.js",
+    "dev:auth": "cd auth-service && .venv\\Scripts\\python manage.py runserver 8100",
+    "test:auth": "cd auth-service && .venv\\Scripts\\python manage.py test apps.accounts"
   }
 }

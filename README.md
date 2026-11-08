@@ -102,6 +102,14 @@ cd frontend && npm run dev    # → http://localhost:3000
 cd mobile && npx expo start   # → Expo Go QR code
 ```
 
+**Mobile mic (speech-to-text):** `expo-speech-recognition` is a native module, so the
+mic button only appears in a dev/EAS build (and on Expo web). In Expo Go the app hides
+it and learners type instead. Build one with:
+
+```bash
+cd mobile && npx eas build --profile preview --platform android
+```
+
 Full setup guide: [docs/SETUP.md](docs/SETUP.md)
 
 ---

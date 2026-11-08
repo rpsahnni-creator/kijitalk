@@ -1,35 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/stores/useStore';
+import { AccountGate } from '@/components/AccountGate';
 import { api } from '@/lib/api';
-import { BOARDS, GRADES, INDIAN_STATES, LEARNING_GOALS, LEVELS } from '@/lib/i18n';
+import { BOARDS, GRADES, HOME_LANGUAGES, INDIAN_STATES, LEARNING_GOALS, LEVELS } from '@/lib/i18n';
 
 export default function ProfileOnboardingPage() {
-  const { token, syncProfile } = useAuthStore();
+  const { token, user, profile, initialized, syncProfile } = useAuthStore();
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!initialized) return;
+    if (!user) router.replace('/signup');
+    else if (profile?.onboardingCompleted) router.replace('/dashboard');
+  }, [initialized, user, profile?.onboardingCompleted, router]);
   const [form, setForm] = useState({
     grade: '',
     board: 'CBSE',
     state: '',
     learningGoal: 'school',
     targetLevel: 'beginner',
+    nativeLanguage: 'hi',
   });
 
   const saveProfile = async () => {
     if (!token || !form.grade || !form.state) return;
     setLoading(true);
+    setError('');
     try {
       await api.patch(
         '/api/auth/me',
         {
           ...form,
-          nativeLanguage: 'hi',
           onboardingCompleted: true,
         },
         token
@@ -37,18 +46,21 @@ export default function ProfileOnboardingPage() {
       await syncProfile();
       router.replace('/dashboard');
     } catch {
+      setError('Profile save nahi ho paya. Internet check karke dobara try karo.');
       setLoading(false);
     }
   };
 
+  // Terms / parental consent come first: nothing is collected before consent.
   return (
+    <AccountGate>
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
-      <div className="mx-auto w-full max-w-lg flex-1 p-6">
+      <div className="mx-auto w-full max-w-lg flex-1 px-5 py-10">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero p-2">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero p-2 shadow-lg shadow-brand-900/20">
             <Image src="/logo.png" alt="KijiTalk" width={56} height={56} className="h-full w-full object-contain" />
           </div>
-          <h1 className="text-2xl font-bold">Apna profile set karo</h1>
+          <h1 className="font-display text-2xl font-bold">Apna profile set karo</h1>
           <p className="text-slate-500">Bharat ke har student ke liye — bilkul free</p>
         </div>
 
@@ -56,7 +68,7 @@ export default function ProfileOnboardingPage() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className={`h-2 rounded-full transition-all ${i === step ? 'w-8 bg-brand-600' : 'w-2 bg-slate-300'}`}
+              className={`h-2 rounded-full transition-all ${i === step ? 'w-8 bg-brand-600' : i < step ? 'w-2 bg-brand-300' : 'w-2 bg-slate-300 dark:bg-slate-700'}`}
             />
           ))}
         </div>
@@ -72,8 +84,8 @@ export default function ProfileOnboardingPage() {
                   onClick={() => setForm({ ...form, grade: value })}
                   className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
                     form.grade === value
-                      ? 'border-brand-500 bg-brand-50 text-brand-700'
-                      : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700'
+                      ? 'border-brand-500 bg-brand-50 text-brand-700 ring-2 ring-brand-500/20 dark:bg-brand-950/50 dark:text-brand-200'
+                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800'
                   }`}
                 >
                   {label}
@@ -81,8 +93,9 @@ export default function ProfileOnboardingPage() {
               ))}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Board</label>
+              <label htmlFor="board" className="label">Board</label>
               <select
+                id="board"
                 value={form.board}
                 onChange={(e) => setForm({ ...form, board: e.target.value })}
                 className="input-field"
@@ -99,6 +112,7 @@ export default function ProfileOnboardingPage() {
           <div className="card space-y-4">
             <h2 className="font-semibold">Aap kahan se ho?</h2>
             <select
+              aria-label="State"
               value={form.state}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
               className="input-field"
@@ -108,6 +122,18 @@ export default function ProfileOnboardingPage() {
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
+            <label htmlFor="home-language" className="block font-semibold">Ghar ki bhasha · Home language</label>
+            <select
+              id="home-language"
+              value={form.nativeLanguage}
+              onChange={(e) => setForm({ ...form, nativeLanguage: e.target.value })}
+              className="input-field"
+            >
+              {HOME_LANGUAGES.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+            <p className="-mt-2 text-xs text-slate-500">Kiki is bhasha mein likhe/bole sawal samjhegi aur English sikhayegi.</p>
             <h2 className="font-semibold">English kyun seekhna hai?</h2>
             <div className="space-y-2">
               {LEARNING_GOALS.map(({ value, label, desc }) => (
@@ -117,8 +143,8 @@ export default function ProfileOnboardingPage() {
                   onClick={() => setForm({ ...form, learningGoal: value })}
                   className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                     form.learningGoal === value
-                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                      : 'border-slate-200 dark:border-slate-700'
+                      ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-500/20 dark:bg-brand-950/50'
+                      : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:bg-slate-800'
                   }`}
                 >
                   <p className="font-medium">{label}</p>
@@ -140,8 +166,8 @@ export default function ProfileOnboardingPage() {
                   onClick={() => setForm({ ...form, targetLevel: value })}
                   className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                     form.targetLevel === value
-                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                      : 'border-slate-200 dark:border-slate-700'
+                      ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-500/20 dark:bg-brand-950/50'
+                      : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:bg-slate-800'
                   }`}
                 >
                   <p className="font-medium">{label}</p>
@@ -150,6 +176,12 @@ export default function ProfileOnboardingPage() {
               ))}
             </div>
           </div>
+        )}
+
+        {error && (
+          <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {error}
+          </p>
         )}
 
         <div className="mt-6 flex gap-3">
@@ -175,5 +207,6 @@ export default function ProfileOnboardingPage() {
         </div>
       </div>
     </div>
+    </AccountGate>
   );
 }

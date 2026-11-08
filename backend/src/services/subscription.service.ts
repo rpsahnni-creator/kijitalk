@@ -28,7 +28,12 @@ export interface UsageStatus {
  * to 'free' in the database, so every usage check re-derives it here instead.
  */
 export function effectiveTier(user: User): 'free' | 'premium' {
-  if (user.subscriptionTier === 'premium' && user.subscriptionExpiresAt && user.subscriptionExpiresAt < new Date()) {
+  const now = new Date();
+  // A school licence (B2B) gives every enrolled student Premium.
+  if (user.schoolLicenseUntil && user.schoolLicenseUntil > now) return 'premium';
+  // Complimentary Premium given by an admin.
+  if (user.premiumGrantUntil && user.premiumGrantUntil > now) return 'premium';
+  if (user.subscriptionTier === 'premium' && user.subscriptionExpiresAt && user.subscriptionExpiresAt < now) {
     return 'free';
   }
   return user.subscriptionTier;

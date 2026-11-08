@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Switch, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { AppHeader, BrandFooter } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import { api } from '@/lib/api';
 
@@ -34,8 +35,9 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-slate-50 px-6 pt-14 dark:bg-slate-900">
-      <Text className="mb-8 text-xl font-bold text-slate-900 dark:text-white">Settings</Text>
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <AppHeader title="Settings" />
+      <View className="flex-1 px-6 pt-6">
 
       <View className="mb-6 flex-row items-center gap-4 rounded-3xl bg-white p-5 dark:bg-slate-800">
         <View className="h-16 w-16 items-center justify-center rounded-full bg-brand-600">
@@ -53,7 +55,7 @@ export default function SettingsScreen() {
         className="mb-4 flex-row items-center justify-between rounded-2xl bg-white p-4 dark:bg-slate-800"
       >
         <View className="flex-row items-center gap-3">
-          <Ionicons name="star" size={20} color={tier === 'premium' ? '#e0ad00' : '#94a3b8'} />
+          <Ionicons name="star" size={20} color={tier === 'premium' ? '#c9c400' : '#94a3b8'} />
           <View>
             <Text className="font-medium text-slate-900 dark:text-white">{tier === 'premium' ? 'Premium Plan' : 'Free Plan'}</Text>
             <Text className="text-xs text-slate-500">{tier === 'premium' ? 'Unlimited AI practice active' : 'Upgrade karo unlimited practice ke liye'}</Text>
@@ -76,6 +78,8 @@ export default function SettingsScreen() {
       <TouchableOpacity onPress={handleSignOut} className="rounded-2xl border border-red-200 py-4">
         <Text className="text-center font-semibold text-red-600">Sign Out</Text>
       </TouchableOpacity>
+    </View>
+      <BrandFooter />
     </View>
   );
 }

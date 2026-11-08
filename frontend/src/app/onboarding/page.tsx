@@ -10,19 +10,19 @@ const slides = [
     title: 'Kiki se English Seekho',
     description: 'Hindi mein bolo ya likho — Kiki turant English mein translate karke sikhayegi. Poore Bharat ke students ke liye free!',
     emoji: '💬',
-    gradient: 'from-brand-500 to-accent-500',
+    gradient: 'from-brand-700 to-brand-500',
   },
   {
     title: 'School & Daily Life Practice',
     description: 'Class introduction, teacher se baat, railway station, bazaar — real Indian situations mein practice karo.',
     emoji: '🏫',
-    gradient: 'from-accent-500 to-accent-600',
+    gradient: 'from-brand-800 via-brand-600 to-accent-500',
   },
   {
     title: 'Bol kar Seekho · Track karo',
     description: 'Mic se bolo, pronunciation score pao, daily streak banao — roz thoda practice, bahut aage badho!',
     emoji: '🎤',
-    gradient: 'from-brand-500 to-brand-600',
+    gradient: 'from-brand-900 to-brand-600',
   },
 ];
 
@@ -32,14 +32,14 @@ export default function OnboardingPage() {
   const slide = slides[step];
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
-      <div className={`mx-6 mt-8 flex flex-1 flex-col items-center justify-center rounded-3xl bg-gradient-to-br ${slide.gradient} p-8 text-center text-white`}>
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
+      <div className={`mx-auto mt-8 flex w-[calc(100%-3rem)] max-w-2xl flex-1 flex-col items-center justify-center rounded-3xl shadow-xl shadow-brand-900/20 bg-gradient-to-br ${slide.gradient} p-8 text-center text-white`}>
         <span className="mb-6 text-7xl">{slide.emoji}</span>
-        <h1 className="mb-4 text-3xl font-bold">{slide.title}</h1>
+        <h1 className="mb-4 font-display text-3xl font-bold">{slide.title}</h1>
         <p className="max-w-sm text-lg text-white/90">{slide.description}</p>
       </div>
 
-      <div className="p-6">
+      <div className="mx-auto w-full max-w-2xl p-6">
         <div className="mb-6 flex justify-center gap-2">
           {slides.map((_, i) => (
             <div

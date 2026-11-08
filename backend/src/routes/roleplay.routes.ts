@@ -93,7 +93,7 @@ router.post('/:id/message', authMiddleware, async (req: AuthRequest, res: Respon
 
     const history = session.messages.map((m) => ({ role: m.role, content: m.content }));
 
-    const aiResponse = await generateTutorReply(requestedEngine, message, history, scenario.systemPrompt, user.id);
+    const aiResponse = await generateTutorReply(requestedEngine, message, history, scenario.systemPrompt, user.id, 'roleplay', user.nativeLanguage);
 
     await prisma.chatMessage.createMany({
       data: [
@@ -123,7 +123,7 @@ router.post('/:id/message', authMiddleware, async (req: AuthRequest, res: Respon
     });
 
     recordUserActivity(user, 2);
-    recordAiUsage(user);
+    if (aiResponse.engineUsed !== 'offline') recordAiUsage(user); // no quota for canned replies
     await saveUser(user);
 
     res.json({

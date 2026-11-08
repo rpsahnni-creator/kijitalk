@@ -1,0 +1,87 @@
+# KijiTalk on one server (staging or production).
+#   cp deploy/.env.example deploy/.env   # fill in real values
+#   docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+# Images come from GitHub Container Registry, built by .github/workflows/deploy.yml.
+name: kijitalk
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kijitalk
+      POSTGRES_USER: kijitalk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U kijitalk -d kijitalk']
+      interval: 5s
+      retries: 10
+
+  auth:
+    image: ${IMAGE_REGISTRY:-ghcr.io/rpsahnni-creator}/kijitalk-auth:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      DEBUG: 'False'
+      ALLOWED_HOSTS: ${AUTH_HOST:?}
+      DATABASE_URL: postgresql://kijitalk:${POSTGRES_PASSWORD}@db:5432/kijitalk
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+      NODE_API_URL: http://api:4001
+      FRONTEND_URL: https://${WEB_HOST}
+      CORS_ALLOWED_ORIGINS: https://${WEB_HOST}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+      EMAIL_HOST: ${SMTP_HOST:?}
+      EMAIL_PORT: ${SMTP_PORT:-587}
+      EMAIL_HOST_USER: ${SMTP_USER:-}
+      EMAIL_HOST_PASSWORD: ${SMTP_PASSWORD:-}
+      DEFAULT_FROM_EMAIL: ${MAIL_FROM:?}
+      SENTRY_DSN: ${SENTRY_DSN_AUTH:-}
+      SENTRY_ENVIRONMENT: ${DEPLOY_ENV:-production}
+    ports: ['127.0.0.1:8100:8100']
+
+  api:
+    image: ${IMAGE_REGISTRY:-ghcr.io/rpsahnni-creator}/kijitalk-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      NODE_ENV: production
+      PORT: 4001
+      DATABASE_URL: postgresql://kijitalk:${POSTGRES_PASSWORD}@db:5432/kijitalk
+      CORS_ORIGIN: https://${WEB_HOST}
+      WEB_URL: https://${WEB_HOST}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      RAZORPAY_PLAN_ID: ${RAZORPAY_PLAN_ID:-}
+      SELLER_LEGAL_NAME: ${SELLER_LEGAL_NAME:-Kiji Technology}
+      SELLER_GSTIN: ${SELLER_GSTIN:-}
+      SELLER_ADDRESS: ${SELLER_ADDRESS:-}
+      SELLER_STATE: ${SELLER_STATE:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:?}
+      ENABLE_SCHEDULER: 'true'
+      TRUST_PROXY: '1' # behind Caddy
+      RATE_LIMIT_PER_USER: ${RATE_LIMIT_PER_USER:-900}
+      RATE_LIMIT_PER_IP: ${RATE_LIMIT_PER_IP:-3000}
+      SENTRY_DSN: ${SENTRY_DSN_API:-}
+      SENTRY_ENVIRONMENT: ${DEPLOY_ENV:-production}
+    ports: ['127.0.0.1:4001:4001']
+
+  web:
+    image: ${IMAGE_REGISTRY:-ghcr.io/rpsahnni-creator}/kijitalk-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on: [api, auth]
+    ports: ['127.0.0.1:3100:3100']
+
+volumes:
+  pgdata:

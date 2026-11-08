@@ -1,0 +1,10 @@
+# Reverse proxy with automatic HTTPS. Replace the hostnames.
+staging.kijitalk.example {
+	reverse_proxy 127.0.0.1:3100
+}
+api.staging.kijitalk.example {
+	reverse_proxy 127.0.0.1:4001
+}
+auth.staging.kijitalk.example {
+	reverse_proxy 127.0.0.1:8100
+}

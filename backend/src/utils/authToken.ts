@@ -1,21 +1,42 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 
-export interface AuthTokenPayload {
-  sub: string;
+/** Claims inside an access token issued by auth-service (Django + SimpleJWT). */
+export interface AccessTokenClaims {
+  authUserId: string;
+  email: string;
+  name: string;
+  emailVerified: boolean;
+  /** "ok", or what still blocks the learner: "setup" | "parent_pending" | "parent_denied". */
+  gate: string;
 }
 
-export function signAuthToken(userId: string): string {
-  return jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: '30d' });
-}
-
-export function verifyAuthToken(token: string): AuthTokenPayload | null {
+/**
+ * Verifies a short-lived access token from auth-service: signature, expiry,
+ * issuer and audience. Refresh tokens are rejected — they only work at the auth
+ * service itself.
+ */
+export function verifyAccessToken(token: string): AccessTokenClaims | null {
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
-    if (typeof decoded === 'object' && decoded && typeof decoded.sub === 'string') {
-      return { sub: decoded.sub };
-    }
-    return null;
+    const decoded = jwt.verify(token, env.AUTH_JWT_SECRET, {
+      algorithms: ['HS256'],
+      issuer: env.AUTH_JWT_ISSUER,
+      audience: env.AUTH_JWT_AUDIENCE,
+    });
+    if (typeof decoded !== 'object' || decoded === null) return null;
+
+    const claims = decoded as Record<string, unknown>;
+    if (claims.token_type !== 'access') return null;
+    if (typeof claims.email !== 'string' || !claims.email) return null;
+
+    return {
+      authUserId: String(claims.user_id ?? ''),
+      email: claims.email.toLowerCase(),
+      name: typeof claims.name === 'string' && claims.name ? claims.name : 'Learner',
+      emailVerified: claims.email_verified === true,
+      // Tokens minted before the gate claim existed were all for active accounts.
+      gate: typeof claims.gate === 'string' ? claims.gate : 'ok',
+    };
   } catch {
     return null;
   }

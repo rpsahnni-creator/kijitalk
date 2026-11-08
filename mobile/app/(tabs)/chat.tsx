@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AppHeader } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import { useTutorStore } from '@/stores/tutorStore';
 import { api, ApiError, ChatMessage, TutorEngines } from '@/lib/api';
 import { speechService } from '@/lib/speech';
+import { MicButton } from '@/components/MicButton';
 
 export default function ChatScreen() {
   const { token } = useAuthStore();
@@ -52,8 +54,9 @@ export default function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-slate-50 dark:bg-slate-900">
-      <View className="flex-row items-center justify-between px-6 pt-14 pb-2">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <AppHeader title="Kiki Chat" />
+      <View className="flex-row items-center justify-between px-6 pt-3 pb-2">
         <Text className="text-xl font-bold text-slate-900 dark:text-white">Chat with Kiki</Text>
         {claudeAvailable && (
           <View className="flex-row rounded-full bg-slate-100 p-1 dark:bg-slate-800">
@@ -94,7 +97,7 @@ export default function ChatScreen() {
             )}
             {m.teachingTip && (
               <View className="mt-2 flex-row items-start gap-1.5 rounded-xl bg-accent-50 px-3 py-2">
-                <Ionicons name="bulb" size={14} color="#8f6e00" />
+                <Ionicons name="bulb" size={14} color="#7a7600" />
                 <Text className="flex-1 text-xs text-accent-800">{m.teachingTip}</Text>
               </View>
             )}
@@ -103,7 +106,8 @@ export default function ChatScreen() {
         {loading && <Text className="text-slate-400">Kiki is typing...</Text>}
       </ScrollView>
 
-      <View className="flex-row gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+      <View className="flex-row items-center gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+        <MicButton onText={(t) => setInput(t)} onPartial={(t) => setInput(t)} disabled={loading} />
         <TextInput
           className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-600 dark:text-white"
           placeholder="Hindi ya English mein likho..."

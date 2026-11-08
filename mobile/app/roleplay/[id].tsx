@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { api, ApiError, ChatMessage } from '@/lib/api';
+import { MicButton } from '@/components/MicButton';
 
 export default function RoleplayDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -52,7 +53,8 @@ export default function RoleplayDetailScreen() {
           </View>
         ))}
       </ScrollView>
-      <View className="flex-row gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+      <View className="flex-row items-center gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+        <MicButton onText={(t) => setInput(t)} onPartial={(t) => setInput(t)} disabled={loading} />
         <TextInput className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-600 dark:text-white" placeholder="Respond..." value={input} onChangeText={setInput} onSubmitEditing={send} />
         <TouchableOpacity onPress={send} className="justify-center rounded-2xl bg-brand-600 px-5">
           <Text className="font-semibold text-white">Send</Text>

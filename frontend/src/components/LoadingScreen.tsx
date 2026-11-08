@@ -4,7 +4,7 @@ import { KikiAvatar } from './KikiAvatar';
 
 export function LoadingScreen({ label = 'Loading...' }: { label?: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white dark:bg-slate-900">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 dark:bg-slate-950">
       <KikiAvatar size="lg" animated />
       <div className="flex items-center gap-2 text-sm text-slate-500">
         <span className="h-2 w-2 animate-bounce rounded-full bg-brand-500" />
